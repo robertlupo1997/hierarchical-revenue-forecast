@@ -1,0 +1,48 @@
+# Data files (download locally)
+data/
+models/*.onnx
+models/*.pkl
+models/*.parquet
+models/*.npy
+models/*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+venv/
+ENV/
+
+# Go
+mlrf-api/server
+
+# Node/Bun
+node_modules/
+mlrf-dashboard/dist/
+.bun/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code skills (third-party, not project-specific)
+.claude/skills/
+.claude/settings.local.json
+
+# Thoughts directory (local research)
+thoughts/
+
+# Windows reserved names
+nul

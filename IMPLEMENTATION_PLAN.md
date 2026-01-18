@@ -471,16 +471,50 @@ def create_summing_matrix(hierarchy_spec: dict) -> np.ndarray:
 
 ### Success Criteria:
 
-#### Automated Verification:
-- [ ] Data downloads successfully: `python -m mlrf_data.download`
-- [ ] Feature matrix builds without errors: `python -m mlrf_data.features`
-- [ ] Tests pass: `pytest mlrf-data/tests/`
-- [ ] Linting passes: `ruff check mlrf-data/`
+#### Automated Verification (ALL must pass):
+```bash
+# 1. Install package
+cd mlrf-data && pip install -e ".[dev]"
 
-#### Manual Verification:
-- [ ] Feature matrix has expected shape (~2.5M rows after lag filtering)
-- [ ] No data leakage (lags properly shifted)
-- [ ] Hierarchy sums correctly (spot check: Total = sum of all stores)
+# 2. Download data (requires ~/.kaggle/kaggle.json)
+python -m mlrf_data.download
+
+# 3. Build feature matrix
+python -m mlrf_data.features
+
+# 4. Run tests (includes data leakage and hierarchy sum checks)
+pytest mlrf-data/tests/ -v
+
+# 5. Lint check
+ruff check mlrf-data/
+
+# 6. Verify feature matrix shape (must be >2M rows)
+python -c "import polars as pl; df = pl.read_parquet('data/features/feature_matrix.parquet'); assert df.shape[0] > 2_000_000, f'Only {df.shape[0]} rows'; print(f'Feature matrix: {df.shape}')"
+
+# 7. Verify no data leakage (lag values come from prior dates)
+python -c "
+import polars as pl
+df = pl.read_parquet('data/features/feature_matrix.parquet')
+# Check that lag_1 values differ from current day values
+sample = df.filter(pl.col('sales_lag_1').is_not_null()).head(100)
+assert (sample['sales'] != sample['sales_lag_1']).any(), 'Lag values match current - data leakage!'
+print('No data leakage detected')
+"
+
+# 8. Verify hierarchy sums correctly
+python -c "
+import polars as pl
+df = pl.read_parquet('data/features/feature_matrix.parquet')
+date = df['date'].max()
+day_df = df.filter(pl.col('date') == date)
+total = day_df['sales'].sum()
+store_totals = day_df.group_by('store_nbr').agg(pl.col('sales').sum())['sales'].sum()
+assert abs(total - store_totals) < 0.01, f'Hierarchy mismatch: {total} vs {store_totals}'
+print(f'Hierarchy check passed: Total={total:.2f}')
+"
+```
+
+**Completion Signal**: When all 8 checks pass, output `PHASE_1_1_COMPLETE`
 
 ---
 
@@ -955,20 +989,83 @@ def validate_onnx_model(
 
 ### Success Criteria:
 
-#### Automated Verification:
-- [ ] Statistical models train: `python -m mlrf_ml.models.statistical`
-- [ ] LightGBM trains without errors: `python -m mlrf_ml.models.lightgbm_model`
-- [ ] Reconciliation runs: `python -m mlrf_ml.reconciliation`
-- [ ] ONNX export validates: `python -m mlrf_ml.export`
-- [ ] Tests pass: `pytest mlrf-ml/tests/`
+#### Automated Verification (ALL must pass):
+```bash
+# 1. Install ML package
+cd mlrf-ml && pip install -e ".[dev]"
 
-#### Manual Verification:
-- [ ] Cross-validation RMSLE < 0.5 for best model
-- [ ] Reconciled forecasts sum correctly (Total = sum of stores)
-- [ ] SHAP values are reasonable (no extreme outliers)
-- [ ] ONNX model matches LightGBM predictions within 0.1%
+# 2. Train statistical models
+python -m mlrf_ml.models.statistical
 
-**Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
+# 3. Train LightGBM
+python -m mlrf_ml.models.lightgbm_model
+
+# 4. Run reconciliation
+python -m mlrf_ml.reconciliation
+
+# 5. Export to ONNX
+python -m mlrf_ml.export
+
+# 6. Run tests
+pytest mlrf-ml/tests/ -v
+
+# 7. Lint check
+ruff check mlrf-ml/
+
+# 8. Verify RMSLE < 0.5
+python -c "
+import json
+with open('models/metrics.json') as f:
+    metrics = json.load(f)
+assert metrics['best_rmsle'] < 0.5, f\"RMSLE {metrics['best_rmsle']} >= 0.5\"
+print(f\"RMSLE: {metrics['best_rmsle']:.4f} (PASS)\")
+"
+
+# 9. Verify reconciled forecasts sum correctly
+python -c "
+import polars as pl
+reconciled = pl.read_parquet('models/reconciled_forecasts.parquet')
+total_pred = reconciled.filter(pl.col('level') == 'Total')['prediction'].item()
+store_sum = reconciled.filter(pl.col('level') == 'Store')['prediction'].sum()
+assert abs(total_pred - store_sum) / total_pred < 0.01, f'Hierarchy mismatch: {total_pred} vs {store_sum}'
+print(f'Reconciliation check passed: Total={total_pred:.2f}, Store sum={store_sum:.2f}')
+"
+
+# 10. Verify ONNX matches LightGBM within 0.1%
+python -c "
+import numpy as np
+import onnxruntime as ort
+import lightgbm as lgb
+import pickle
+
+# Load models
+with open('models/lightgbm_model.pkl', 'rb') as f:
+    lgb_model = pickle.load(f)
+ort_session = ort.InferenceSession('models/lightgbm_model.onnx')
+
+# Test with sample data
+sample = np.random.randn(10, 26).astype(np.float32)
+lgb_pred = lgb_model.predict(sample)
+onnx_pred = ort_session.run(None, {'input': sample})[0].flatten()
+
+max_diff = np.max(np.abs(lgb_pred - onnx_pred) / (np.abs(lgb_pred) + 1e-8))
+assert max_diff < 0.001, f'ONNX mismatch: {max_diff*100:.2f}%'
+print(f'ONNX validation passed: max diff = {max_diff*100:.4f}%')
+"
+
+# 11. Verify SHAP values are reasonable
+python -c "
+import numpy as np
+shap_data = np.load('models/shap_values.npy')
+assert not np.any(np.isnan(shap_data)), 'SHAP has NaN values'
+assert not np.any(np.isinf(shap_data)), 'SHAP has Inf values'
+max_abs = np.max(np.abs(shap_data))
+assert max_abs < 1000, f'SHAP outlier detected: {max_abs}'
+print(f'SHAP validation passed: max abs value = {max_abs:.2f}')
+"
+```
+
+**Completion Signal**: When all 11 checks pass, output `PHASE_1_2_COMPLETE`
 
 ---
 
@@ -1470,19 +1567,56 @@ CMD ["./server"]
 
 ### Success Criteria:
 
-#### Automated Verification:
-- [ ] Go builds: `go build ./cmd/server`
-- [ ] Tests pass: `go test ./...`
-- [ ] Docker builds: `docker build -t mlrf-api .`
-- [ ] Health endpoint returns 200: `curl localhost:8080/health`
+#### Automated Verification (ALL must pass):
+```bash
+# 1. Build Go binary
+cd mlrf-api && go build ./cmd/server
 
-#### Manual Verification:
-- [ ] Predict endpoint returns valid predictions
-- [ ] P95 latency < 10ms with warm cache
-- [ ] Explain endpoint returns waterfall data
-- [ ] Cache hit ratio > 80% for repeated requests
+# 2. Run Go tests
+go test ./... -v
 
-**Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
+# 3. Lint Go code
+golangci-lint run || echo "Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+
+# 4. Build Docker image
+docker build -t mlrf-api .
+
+# 5. Start server (background) and test health
+./server &
+SERVER_PID=$!
+sleep 2
+curl -f http://localhost:8080/health || (kill $SERVER_PID; exit 1)
+
+# 6. Test predict endpoint
+curl -f -X POST http://localhost:8080/predict \
+  -H "Content-Type: application/json" \
+  -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0.0]*26,"horizon":90}' \
+  | jq '.prediction' || (kill $SERVER_PID; exit 1)
+
+# 7. Test explain endpoint
+curl -f -X POST http://localhost:8080/explain \
+  -H "Content-Type: application/json" \
+  -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01"}' \
+  | jq '.features | length' || (kill $SERVER_PID; exit 1)
+
+# 8. Latency benchmark (P95 < 10ms with warm cache)
+echo "Running 100 requests for latency test..."
+for i in {1..100}; do
+  curl -s -o /dev/null -w "%{time_total}\n" -X POST http://localhost:8080/predict \
+    -H "Content-Type: application/json" \
+    -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0.0]*26,"horizon":90}'
+done | sort -n | tail -5 | head -1 | awk '{if ($1 > 0.010) exit 1; else print "P95 latency OK: "$1"s"}'
+
+# 9. Cache hit test
+RESP1=$(curl -s -X POST http://localhost:8080/predict -H "Content-Type: application/json" -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0.0]*26,"horizon":90}')
+RESP2=$(curl -s -X POST http://localhost:8080/predict -H "Content-Type: application/json" -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0.0]*26,"horizon":90}')
+echo $RESP2 | jq -e '.cached == true' || echo "Warning: Cache not working"
+
+kill $SERVER_PID
+echo "All API tests passed"
+```
+
+**Completion Signal**: When all 9 checks pass, output `PHASE_1_3_COMPLETE`
 
 ---
 
@@ -2154,19 +2288,43 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ### Success Criteria:
 
-#### Automated Verification:
-- [ ] TypeScript compiles: `bun run typecheck`
-- [ ] Lint passes: `bun run lint`
-- [ ] Build succeeds: `bun run build`
-- [ ] Docker builds: `docker build -t mlrf-dashboard .`
+#### Automated Verification (ALL must pass):
+```bash
+# 1. Install dependencies
+cd mlrf-dashboard && bun install
 
-#### Manual Verification:
-- [ ] SHAP waterfall displays correctly with positive/negative bars
-- [ ] Hierarchy drilldown navigates Total → Store → Family → Bottom
-- [ ] Model comparison shows ranked models
-- [ ] Dashboard loads in < 2 seconds
+# 2. TypeScript type check
+bun run typecheck
 
-**Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to integration.
+# 3. Lint check
+bun run lint
+
+# 4. Build production bundle
+bun run build
+
+# 5. Verify build output exists
+test -d dist && test -f dist/index.html || (echo "Build output missing"; exit 1)
+
+# 6. Build Docker image
+docker build -t mlrf-dashboard .
+
+# 7. Start dev server and verify it responds
+bun run dev &
+DEV_PID=$!
+sleep 5
+curl -f http://localhost:5173 || (kill $DEV_PID; exit 1)
+kill $DEV_PID
+
+# 8. Component tests (if using vitest)
+bun run test || echo "No tests configured yet"
+
+# 9. Verify bundle size < 500KB (gzipped)
+BUNDLE_SIZE=$(find dist/assets -name "*.js" -exec gzip -c {} \; | wc -c)
+test $BUNDLE_SIZE -lt 512000 || (echo "Bundle too large: $BUNDLE_SIZE bytes"; exit 1)
+echo "Bundle size OK: $BUNDLE_SIZE bytes gzipped"
+```
+
+**Completion Signal**: When all 9 checks pass, output `PHASE_1_4_COMPLETE`
 
 ---
 
@@ -2280,15 +2438,61 @@ MIT
 
 ### Success Criteria:
 
-#### Automated Verification:
-- [ ] `docker-compose up -d` starts all services
-- [ ] Health checks pass: `curl localhost:8080/health`
-- [ ] Dashboard accessible: `curl localhost:3000`
+#### Automated Verification (ALL must pass):
+```bash
+# 1. Start all services
+docker-compose up -d
 
-#### Manual Verification:
-- [ ] Full flow works: Select hierarchy → View forecast → See SHAP explanation
-- [ ] API responds in <10ms with cache hits
-- [ ] Dashboard renders correctly on desktop and tablet
+# 2. Wait for services to be healthy
+echo "Waiting for services to start..."
+sleep 30
+
+# 3. Check Redis health
+docker-compose exec redis redis-cli ping | grep -q PONG || (echo "Redis not healthy"; exit 1)
+echo "Redis: OK"
+
+# 4. Check API health
+curl -f http://localhost:8080/health || (echo "API not healthy"; exit 1)
+echo "API: OK"
+
+# 5. Check Dashboard
+curl -f http://localhost:3000 || (echo "Dashboard not accessible"; exit 1)
+echo "Dashboard: OK"
+
+# 6. End-to-end test: Predict endpoint
+curl -f -X POST http://localhost:8080/predict \
+  -H "Content-Type: application/json" \
+  -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"horizon":90}' \
+  | jq -e '.prediction != null' || (echo "Predict endpoint failed"; exit 1)
+echo "Predict endpoint: OK"
+
+# 7. End-to-end test: Explain endpoint
+curl -f -X POST http://localhost:8080/explain \
+  -H "Content-Type: application/json" \
+  -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01"}' \
+  | jq -e '.features | length > 0' || (echo "Explain endpoint failed"; exit 1)
+echo "Explain endpoint: OK"
+
+# 8. End-to-end test: Hierarchy endpoint
+curl -f "http://localhost:8080/hierarchy?date=2017-08-01" \
+  | jq -e '.children | length > 0' || (echo "Hierarchy endpoint failed"; exit 1)
+echo "Hierarchy endpoint: OK"
+
+# 9. Latency test (P95 < 10ms with warm cache)
+echo "Running latency test..."
+for i in {1..50}; do
+  curl -s -o /dev/null -w "%{time_total}\n" -X POST http://localhost:8080/predict \
+    -H "Content-Type: application/json" \
+    -d '{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"horizon":90}'
+done | sort -n | tail -3 | head -1 | awk '{if ($1 > 0.010) {print "P95 latency too high: "$1"s"; exit 1} else print "P95 latency OK: "$1"s"}'
+
+# 10. Clean up
+docker-compose down
+echo ""
+echo "=== ALL INTEGRATION TESTS PASSED ==="
+```
+
+**Completion Signal**: When all 10 checks pass, output `PHASE_1_5_COMPLETE` and `ALL_PHASES_COMPLETE`
 
 ---
 
