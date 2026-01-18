@@ -8,10 +8,10 @@ Last mode: BUILD
 ---
 
 ## Current Iteration
-Task: Create scripts/run_full_pipeline.sh (Phase 1.6 - E2E Verification)
+Task: Create scripts/integration_tests.sh (Phase 1.6 - E2E Verification)
 Status: Complete
 Files changed:
-- scripts/run_full_pipeline.sh (created)
+- scripts/integration_tests.sh (created)
 Verification: Bash syntax validated
 
 ---
@@ -61,7 +61,7 @@ Implemented:
 ## Phase 1.6 - E2E Verification (IN PROGRESS)
 - [x] quality_gates.yaml
 - [x] scripts/run_full_pipeline.sh
-- [ ] scripts/integration_tests.sh
+- [x] scripts/integration_tests.sh
 - [ ] scripts/generate_verification_report.py
 - [ ] Playwright E2E tests (dashboard.spec.ts, playwright.config.ts)
 
@@ -71,6 +71,14 @@ Implemented:
 ---
 
 ## Iteration Log
+
+### 2026-01-18 - Phase 1.6 scripts/integration_tests.sh
+- Created scripts/integration_tests.sh for API integration testing
+- Tests 7 scenarios: health, predict, batch predict, explain (SHAP), hierarchy, latency benchmark, error handling
+- Validates P95 < 10ms and P99 < 50ms latency requirements from quality_gates.yaml
+- Checks SHAP waterfall structure (base_value, features, shap_value)
+- Validates hierarchy tree structure (level, children, prediction)
+- Bash syntax validated
 
 ### 2026-01-18 - Phase 1.6 scripts/run_full_pipeline.sh
 - Created scripts/run_full_pipeline.sh for full pipeline execution
