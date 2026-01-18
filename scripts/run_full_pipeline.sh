@@ -101,7 +101,7 @@ if [ -f "models/metrics.json" ]; then
 import json
 with open('models/metrics.json') as f:
     metrics = json.load(f)
-rmsle = metrics.get('rmsle', metrics.get('test_rmsle', 1.0))
+rmsle = metrics.get('final_rmsle', metrics.get('rmsle', metrics.get('test_rmsle', 1.0)))
 print(f'  Model RMSLE: {rmsle:.4f}')
 if rmsle > 0.5:
     print('  WARNING: RMSLE above 0.5 threshold')
