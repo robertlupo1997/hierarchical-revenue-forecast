@@ -40,7 +40,7 @@ echo "Prerequisites OK"
 echo ""
 
 # Step 1: Create virtual environment and install Python packages
-echo "Step 1/7: Setting up Python environment..."
+echo "Step 1/8: Setting up Python environment..."
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
 fi
@@ -52,7 +52,7 @@ echo "  Python packages installed"
 
 # Step 2: Download Kaggle data
 echo ""
-echo "Step 2/7: Downloading Kaggle data..."
+echo "Step 2/8: Downloading Kaggle data..."
 if [ ! -f "data/raw/train.csv" ]; then
     python -m mlrf_data.download
     echo "  Data downloaded"
@@ -60,9 +60,19 @@ else
     echo "  Data already exists, skipping download"
 fi
 
-# Step 3: Build feature matrix
+# Step 3: Preprocess raw data
 echo ""
-echo "Step 3/7: Building feature matrix..."
+echo "Step 3/8: Preprocessing raw data..."
+if [ ! -f "data/processed/train_preprocessed.parquet" ]; then
+    python -m mlrf_data.preprocess
+    echo "  Preprocessing complete"
+else
+    echo "  Preprocessed data already exists"
+fi
+
+# Step 4: Build feature matrix
+echo ""
+echo "Step 4/8: Building feature matrix..."
 if [ ! -f "data/features/feature_matrix.parquet" ]; then
     python -m mlrf_data.features
     echo "  Feature matrix built"
@@ -73,9 +83,9 @@ else
     echo "  Feature matrix has $ROWS rows"
 fi
 
-# Step 4: Train ML models
+# Step 5: Train ML models
 echo ""
-echo "Step 4/7: Training ML models..."
+echo "Step 5/8: Training ML models..."
 if [ ! -f "models/lightgbm_model.onnx" ]; then
     python -m mlrf_ml
     echo "  Models trained and exported"
@@ -83,9 +93,9 @@ else
     echo "  Models already exist"
 fi
 
-# Step 5: Validate model quality
+# Step 6: Validate model quality
 echo ""
-echo "Step 5/7: Validating model quality..."
+echo "Step 6/8: Validating model quality..."
 if [ -f "models/metrics.json" ]; then
     python -c "
 import json
@@ -102,9 +112,9 @@ else
     echo "  WARNING: No metrics.json found, skipping validation"
 fi
 
-# Step 6: Start Docker services
+# Step 7: Start Docker services
 echo ""
-echo "Step 6/7: Starting Docker services..."
+echo "Step 7/8: Starting Docker services..."
 $COMPOSE_CMD down 2>/dev/null || true
 $COMPOSE_CMD up -d
 
@@ -114,7 +124,7 @@ MAX_WAIT=60
 WAITED=0
 while [ $WAITED -lt $MAX_WAIT ]; do
     # Check API health
-    if curl -s http://localhost:8080/health | grep -q "ok\|healthy" 2>/dev/null; then
+    if curl -s http://localhost:8081/health | grep -q "ok\|healthy" 2>/dev/null; then
         echo "  API is healthy"
         break
     fi
@@ -146,9 +156,9 @@ if [ $WAITED -ge $MAX_WAIT ]; then
     $COMPOSE_CMD logs dashboard | tail -20
 fi
 
-# Step 7: Run integration tests
+# Step 8: Run integration tests
 echo ""
-echo "Step 7/7: Running integration tests..."
+echo "Step 8/8: Running integration tests..."
 if [ -x "$SCRIPT_DIR/integration_tests.sh" ]; then
     "$SCRIPT_DIR/integration_tests.sh"
 else
@@ -161,7 +171,7 @@ echo "  FULL PIPELINE COMPLETE"
 echo "=========================================="
 echo ""
 echo "System is running at:"
-echo "  - API: http://localhost:8080"
+echo "  - API: http://localhost:8081"
 echo "  - Dashboard: http://localhost:3000"
 echo ""
 echo "To stop: $COMPOSE_CMD down"
