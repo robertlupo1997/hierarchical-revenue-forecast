@@ -80,6 +80,9 @@ When joining time series data (e.g., oil prices) with training data, forward fil
 ### Virtual Environment Required
 System Python is externally managed. Create venv with `python3 -m venv .venv` and activate before pip install.
 
+### Go and Docker Not Available
+Go and Docker are not installed in the WSL environment. Verification requires manual installation of Go 1.22+ and Docker.
+
 ## File Locations
 
 - Specs: `specs/*.md`
