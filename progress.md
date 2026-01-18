@@ -1,6 +1,6 @@
 # MLRF Implementation Progress
 
-## Current Status: COMPLETE - Phase 1.5 (All Phases Complete)
+## Current Status: Phase 1.2 COMPLETE - All core components implemented
 
 Last updated: 2026-01-18
 Last mode: BUILD
@@ -8,24 +8,34 @@ Last mode: BUILD
 ---
 
 ## Current Iteration
-Task: Implement Integration & Deployment (Phase 1.5)
+Task: Implement Training Orchestration (Phase 1.2 - train.py)
 Status: Complete
-Files created:
-- docker-compose.yml
-- README.md
-
-Verification:
-- YAML syntax: PASS (validated with Python yaml.safe_load)
+Files changed:
+- mlrf-ml/src/mlrf_ml/train.py (created)
+- mlrf-ml/src/mlrf_ml/__main__.py (created)
+Verification: All 36 tests pass, lint clean
 
 ---
 
 ## Completed Phases
 - [x] Phase 0: Planning documentation complete
 - [x] Phase 1.1: Data Pipeline (structure, preprocessing, features, hierarchy, tests)
-- [x] Phase 1.2: ML Pipeline (all components implemented and tested)
+- [x] Phase 1.2: ML Pipeline (complete - train.py orchestration added)
 - [x] Phase 1.3: Go API (all components implemented)
 - [x] Phase 1.4: React Dashboard (complete)
 - [x] Phase 1.5: Integration & Deployment (docker-compose, README)
+- [ ] Phase 1.6: End-to-End Verification (NEW)
+
+## Phase 1.2 - ML Pipeline (COMPLETE)
+Implemented:
+- [x] models/statistical.py
+- [x] models/lightgbm_model.py
+- [x] validation.py
+- [x] reconciliation.py
+- [x] explainability.py
+- [x] export.py
+- [x] train.py (training orchestration script)
+- [x] __main__.py (package entry point)
 
 ## Phase 1.4 - React Dashboard (COMPLETE)
 - [x] Project setup (package.json, tsconfig.json, vite.config.ts)
@@ -49,11 +59,19 @@ Verification:
 - [x] README.md
 - [x] YAML syntax validated
 
-## ALL PHASES COMPLETE
+## Remaining Work
+- Phase 1.6: E2E verification scripts, quality gates, Playwright tests
 
 ---
 
 ## Iteration Log
+
+### 2026-01-18 - Phase 1.2 train.py Complete
+- Created mlrf-ml/src/mlrf_ml/train.py with full training pipeline orchestration
+- Created mlrf-ml/src/mlrf_ml/__main__.py for CLI entry point
+- Pipeline includes: feature loading, CV, final training, SHAP, ONNX export
+- All 36 tests pass, lint clean
+- CLI supports --help, --skip-shap, --cv-splits, etc.
 
 ### 2026-01-18 - Phase 1.5 Complete (ALL PHASES COMPLETE)
 - Created docker-compose.yml with Redis, API, and Dashboard services
