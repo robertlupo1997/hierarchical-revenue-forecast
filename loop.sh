@@ -59,7 +59,7 @@ while [ $ITERATION -lt $MAX_ITERATIONS ]; do
     # --dangerously-skip-permissions: Required for autonomous operation
     # --model opus: Use Opus for primary reasoning (adjust if needed)
     # Pipe the prompt file to Claude
-    cat "$PROMPT_FILE" | claude --dangerously-skip-permissions
+    cat "$PROMPT_FILE" | claude --dangerously-skip-permissions -p
 
     EXIT_CODE=$?
 
