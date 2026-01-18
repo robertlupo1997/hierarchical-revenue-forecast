@@ -37,9 +37,8 @@ mlrf-dashboard/dist/
 .DS_Store
 Thumbs.db
 
-# Claude Code skills (third-party, not project-specific)
-.claude/skills/
-.claude/settings.local.json
+# Claude Code (IDE configuration, not project-specific)
+.claude/
 
 # Thoughts directory (local research)
 thoughts/

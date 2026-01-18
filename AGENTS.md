@@ -72,7 +72,11 @@ Polars is 80-100x faster. All data processing must use Polars native operations.
 
 ## Discovered Issues
 
-(Updated during iterations - document fixes here)
+### Forward Fill After Join (Phase 1.1)
+When joining time series data (e.g., oil prices) with training data, forward fill must be done AFTER the join, not before. The oil data may have gaps that don't match training dates.
+
+### Virtual Environment Required
+System Python is externally managed. Create venv with `python3 -m venv .venv` and activate before pip install.
 
 ## File Locations
 
