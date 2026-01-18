@@ -69,6 +69,8 @@ Polars is 80-100x faster. All data processing must use Polars native operations.
 - Pre-allocate ONNX tensors for performance
 - Redis + TinyLFU local cache
 - Cache key: `pred:v1:{store}:{family}:{date}:{horizon}`
+- 27 input features (25 numeric + 2 categorical encoded)
+- Mock data returned for explain/hierarchy when data files not present
 
 ## Discovered Issues
 
