@@ -270,15 +270,20 @@ def train_pipeline(
     logger.info("=" * 60)
     onnx_path = models_dir / "lightgbm_model.onnx"
 
-    # Get numeric features only (ONNX doesn't handle categoricals well)
-    numeric_features = [f for f in feature_names if f not in CATEGORICAL_COLS]
-    logger.info(f"  Exporting with {len(numeric_features)} numeric features")
+    # Export with all features including categoricals (they're integer-encoded)
+    # The model was trained with these features so ONNX needs them all
+    logger.info(f"  Exporting with {len(feature_names)} features (including categoricals)")
 
     try:
-        export_lightgbm_to_onnx(model, numeric_features, onnx_path)
+        export_lightgbm_to_onnx(model, feature_names, onnx_path)
 
-        # Validate ONNX model
-        sample_input = valid_df.head(10).select(numeric_features).to_numpy()
+        # Validate ONNX model - use all features
+        sample_df = valid_df.head(10).select(feature_names).to_pandas()
+        # Encode categoricals as integers for ONNX input
+        for cat_col in CATEGORICAL_COLS:
+            if cat_col in sample_df.columns:
+                sample_df[cat_col] = sample_df[cat_col].astype('category').cat.codes
+        sample_input = sample_df.to_numpy().astype('float32')
         expected_output = model.predict(
             valid_df.head(10).select(feature_names).to_pandas()
         )

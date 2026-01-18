@@ -23,12 +23,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and install ONNX Runtime
-ARG ONNX_VERSION=1.17.1
+ARG ONNX_VERSION=1.18.0
 RUN wget -q https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-${ONNX_VERSION}.tgz \
     && tar -xzf onnxruntime-linux-x64-${ONNX_VERSION}.tgz \
     && cp onnxruntime-linux-x64-${ONNX_VERSION}/lib/* /usr/lib/ \
     && ldconfig \
     && rm -rf onnxruntime-linux-x64-${ONNX_VERSION}* \
+    && apt-get update && apt-get install -y --no-install-recommends curl \
     && apt-get purge -y wget \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
@@ -42,14 +43,14 @@ COPY --from=builder /app/server .
 # COPY models/ ./models/
 
 # Environment variables
-ENV PORT=8080
+ENV PORT=8081
 ENV MODEL_PATH=/app/models/lightgbm_model.onnx
 ENV ONNX_LIB_PATH=/usr/lib/libonnxruntime.so
 
-EXPOSE 8080
+EXPOSE 8081
 
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-    CMD wget -q --spider http://localhost:8080/health || exit 1
+    CMD curl -sf http://localhost:8081/health || exit 1
 
 CMD ["./server"]

@@ -10,7 +10,7 @@ import (
 )
 
 // NumFeatures is the expected number of input features for the model.
-// This must match the ML training pipeline (25 numeric + 2 categorical encoded).
+// Includes all features: 25 numeric + 2 categorical (integer-encoded)
 const NumFeatures = 27
 
 // ONNXSession wraps ONNX Runtime for thread-safe inference.
@@ -61,12 +61,13 @@ func NewONNXSession(modelPath string) (*ONNXSession, error) {
 	}
 
 	// Create session with pre-allocated tensors for performance
+	// Input name: "input", Output name: "variable" (from ONNX model)
 	session, err := ort.NewAdvancedSession(
 		modelPath,
 		[]string{"input"},
-		[]string{"output"},
-		[]ort.Value{inputTensor},
-		[]ort.Value{outputTensor},
+		[]string{"variable"},
+		[]ort.ArbitraryTensor{inputTensor},
+		[]ort.ArbitraryTensor{outputTensor},
 		nil,
 	)
 	if err != nil {
@@ -140,6 +141,7 @@ func (s *ONNXSession) Close() {
 }
 
 // FeatureNames returns the expected feature names in order.
+// Must match the order in mlrf-ml/src/mlrf_ml/models/lightgbm_model.py FEATURE_COLS + CATEGORICAL_COLS
 func FeatureNames() []string {
 	return []string{
 		// Date features
@@ -172,8 +174,8 @@ func FeatureNames() []string {
 		"sales_rolling_std_14",
 		"sales_rolling_std_28",
 		"sales_rolling_std_90",
-		// Categorical (encoded)
-		"family_encoded",
-		"type_encoded",
+		// Categorical features (integer-encoded)
+		"family",
+		"type",
 	}
 }

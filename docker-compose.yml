@@ -17,10 +17,10 @@ services:
   api:
     build: ./mlrf-api
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       - REDIS_URL=redis://redis:6379
-      - PORT=8080
+      - PORT=8081
       - MODEL_PATH=/app/models/lightgbm_model.onnx
     depends_on:
       redis:
@@ -28,7 +28,7 @@ services:
     volumes:
       - ./models:/app/models:ro
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8081/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -39,7 +39,7 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - VITE_API_URL=http://localhost:8081
     depends_on:
       - api
     restart: unless-stopped

@@ -45,8 +45,13 @@ test_health() {
 test_predict() {
     log_info "Testing predict endpoint..."
 
-    # Generate 27 features (25 numeric + 2 categorical encoded)
-    FEATURES="[1234.5, 1100.0, 950.0, 1050.0, 65.3, 0.0, 5.0, 8.0, 2017.0, 15.0, 33.0, 1.0, 0.0, 3.0, 1200.0, 1150.0, 1050.0, 980.0, 2.5, 1.8, 0.15, 0.12, 10000.0, 8500.0, 9200.0, 1.0, 3.0]"
+    # Generate 27 features: 25 numeric + 2 categorical (integer-encoded)
+    # Order: year,month,day,dayofweek,dayofyear,is_mid_month,is_leap_year,oil_price,is_holiday,
+    #        onpromotion,promo_rolling_7,cluster,sales_lag_1,sales_lag_7,sales_lag_14,sales_lag_28,
+    #        sales_lag_90,sales_rolling_mean_7,sales_rolling_mean_14,sales_rolling_mean_28,
+    #        sales_rolling_mean_90,sales_rolling_std_7,sales_rolling_std_14,sales_rolling_std_28,
+    #        sales_rolling_std_90,family(int),type(int)
+    FEATURES="[2017.0, 8.0, 1.0, 1.0, 213.0, 0.0, 0.0, 65.3, 0.0, 5.0, 3.0, 1.0, 1234.5, 1100.0, 950.0, 1050.0, 980.0, 1200.0, 1150.0, 1050.0, 980.0, 2.5, 1.8, 0.15, 0.12, 10.0, 2.0]"
 
     PAYLOAD="{\"store_nbr\": 1, \"family\": \"GROCERY I\", \"date\": \"2017-08-01\", \"horizon\": 15, \"features\": $FEATURES}"
 
@@ -72,7 +77,8 @@ test_predict() {
 test_batch_predict() {
     log_info "Testing batch predict endpoint..."
 
-    FEATURES="[1234.5, 1100.0, 950.0, 1050.0, 65.3, 0.0, 5.0, 8.0, 2017.0, 15.0, 33.0, 1.0, 0.0, 3.0, 1200.0, 1150.0, 1050.0, 980.0, 2.5, 1.8, 0.15, 0.12, 10000.0, 8500.0, 9200.0, 1.0, 3.0]"
+    # 27 features: 25 numeric + 2 categorical (integer-encoded)
+    FEATURES="[2017.0, 8.0, 1.0, 1.0, 213.0, 0.0, 0.0, 65.3, 0.0, 5.0, 3.0, 1.0, 1234.5, 1100.0, 950.0, 1050.0, 980.0, 1200.0, 1150.0, 1050.0, 980.0, 2.5, 1.8, 0.15, 0.12, 10.0, 2.0]"
 
     PAYLOAD="{\"predictions\": [
         {\"store_nbr\": 1, \"family\": \"GROCERY I\", \"date\": \"2017-08-01\", \"horizon\": 15, \"features\": $FEATURES},
@@ -147,7 +153,8 @@ test_hierarchy() {
 test_latency() {
     log_info "Testing latency benchmarks (P95 < 10ms with warm cache)..."
 
-    FEATURES="[1234.5, 1100.0, 950.0, 1050.0, 65.3, 0.0, 5.0, 8.0, 2017.0, 15.0, 33.0, 1.0, 0.0, 3.0, 1200.0, 1150.0, 1050.0, 980.0, 2.5, 1.8, 0.15, 0.12, 10000.0, 8500.0, 9200.0, 1.0, 3.0]"
+    # 27 features: 25 numeric + 2 categorical (integer-encoded)
+    FEATURES="[2017.0, 8.0, 1.0, 1.0, 213.0, 0.0, 0.0, 65.3, 0.0, 5.0, 3.0, 1.0, 1234.5, 1100.0, 950.0, 1050.0, 980.0, 1200.0, 1150.0, 1050.0, 980.0, 2.5, 1.8, 0.15, 0.12, 10.0, 2.0]"
     PAYLOAD="{\"store_nbr\": 1, \"family\": \"GROCERY I\", \"date\": \"2017-08-01\", \"horizon\": 15, \"features\": $FEATURES}"
 
     # Warmup request (first request populates cache)
