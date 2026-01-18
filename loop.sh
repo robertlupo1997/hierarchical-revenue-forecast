@@ -57,9 +57,9 @@ while [ $ITERATION -lt $MAX_ITERATIONS ]; do
 
     # Feed prompt to Claude with fresh context each time
     # --dangerously-skip-permissions: Required for autonomous operation
-    # --model opus: Use Opus for primary reasoning (adjust if needed)
-    # Pipe the prompt file to Claude
-    cat "$PROMPT_FILE" | claude --dangerously-skip-permissions -p
+    # Pass prompt as argument (piping can cause "No messages returned" error)
+    PROMPT_CONTENT=$(cat "$PROMPT_FILE")
+    claude --dangerously-skip-permissions -p "$PROMPT_CONTENT"
 
     EXIT_CODE=$?
 

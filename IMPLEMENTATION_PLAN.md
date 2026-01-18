@@ -987,6 +987,210 @@ def validate_onnx_model(
     return np.allclose(onnx_output.flatten(), expected_output, rtol=rtol)
 ```
 
+#### 9. Training Orchestration Script
+**File**: `mlrf-ml/src/mlrf_ml/train.py`
+
+```python
+"""Training orchestration - ties all ML components together."""
+import json
+import logging
+from pathlib import Path
+
+import polars as pl
+
+from mlrf_data.preprocess import load_and_clean
+from mlrf_data.features import build_features
+from mlrf_data.hierarchy import build_hierarchy_matrix
+
+from mlrf_ml.models.lightgbm_model import train_lightgbm, predict_lightgbm, FEATURE_COLS
+from mlrf_ml.models.statistical import train_statistical_forecasts
+from mlrf_ml.validation import compute_rmsle, walk_forward_validation
+from mlrf_ml.reconciliation import reconcile_forecasts
+from mlrf_ml.explainability import compute_shap_values, create_shap_explainer
+from mlrf_ml.export import export_lightgbm_to_onnx, validate_onnx_model
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+
+def train_pipeline(
+    raw_dir: Path = Path("data/raw"),
+    processed_dir: Path = Path("data/processed"),
+    features_dir: Path = Path("data/features"),
+    models_dir: Path = Path("models"),
+    horizons: list[int] = [15, 30, 60, 90],
+    rmsle_threshold: float = 0.5,
+) -> dict:
+    """
+    Run full training pipeline.
+
+    Steps:
+    1. Load and preprocess raw data
+    2. Build feature matrix
+    3. Build hierarchy matrix
+    4. Train LightGBM model with walk-forward validation
+    5. Train statistical models
+    6. Reconcile forecasts
+    7. Compute SHAP values
+    8. Export to ONNX
+    9. Validate outputs
+
+    Returns:
+        dict with metrics, paths to artifacts
+    """
+    # Create output directories
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    features_dir.mkdir(parents=True, exist_ok=True)
+    models_dir.mkdir(parents=True, exist_ok=True)
+
+    metrics = {}
+
+    # Step 1: Load and preprocess
+    logger.info("Step 1/9: Loading and preprocessing raw data...")
+    train_df = load_and_clean(raw_dir)
+    train_df.write_parquet(processed_dir / "train_clean.parquet")
+    logger.info(f"  Cleaned data: {train_df.shape[0]:,} rows")
+
+    # Step 2: Build features
+    logger.info("Step 2/9: Building feature matrix...")
+    features_df = build_features(train_df, raw_dir)
+    features_df.write_parquet(features_dir / "features.parquet")
+    logger.info(f"  Features: {features_df.shape[1]} columns")
+
+    # Step 3: Build hierarchy
+    logger.info("Step 3/9: Building hierarchy matrix...")
+    hierarchy = build_hierarchy_matrix(features_df)
+    hierarchy.write_parquet(features_dir / "hierarchy.parquet")
+    n_series = features_df.select("store_nbr", "family").unique().shape[0]
+    logger.info(f"  Hierarchy: {n_series} bottom-level series")
+
+    # Step 4: Walk-forward validation + train final model
+    logger.info("Step 4/9: Training LightGBM with walk-forward validation...")
+    cv_results = walk_forward_validation(
+        features_df,
+        n_splits=3,
+        gap_days=90,
+        horizon_days=max(horizons),
+    )
+    metrics["cv_rmsle"] = cv_results["mean_rmsle"]
+    logger.info(f"  CV RMSLE: {metrics['cv_rmsle']:.4f}")
+
+    # Train final model on all data except last 90 days
+    cutoff = features_df["date"].max() - pl.duration(days=90)
+    train_split = features_df.filter(pl.col("date") <= cutoff)
+    valid_split = features_df.filter(pl.col("date") > cutoff)
+
+    model, train_metrics = train_lightgbm(train_split, valid_split)
+    model.save_model(str(models_dir / "lightgbm_model.txt"))
+    metrics["best_rmsle"] = train_metrics["best_rmsle"]
+    logger.info(f"  Final RMSLE: {metrics['best_rmsle']:.4f}")
+
+    # Validate against threshold
+    if metrics["best_rmsle"] >= rmsle_threshold:
+        logger.warning(f"  ⚠️  RMSLE {metrics['best_rmsle']:.4f} >= threshold {rmsle_threshold}")
+    else:
+        logger.info(f"  ✓ RMSLE below threshold")
+
+    # Step 5: Train statistical models
+    logger.info("Step 5/9: Training statistical models...")
+    stat_df = features_df.select(["store_nbr", "family", "date", "sales"]).to_pandas()
+    stat_df["unique_id"] = stat_df["store_nbr"].astype(str) + "_" + stat_df["family"]
+    stat_df = stat_df.rename(columns={"date": "ds", "sales": "y"})
+
+    stat_forecasts = train_statistical_forecasts(
+        stat_df[["unique_id", "ds", "y"]],
+        horizon=max(horizons),
+    )
+    stat_forecasts.to_parquet(models_dir / "statistical_forecasts.parquet")
+    logger.info(f"  Statistical forecasts: {stat_forecasts.shape[0]:,} rows")
+
+    # Step 6: Generate predictions and reconcile
+    logger.info("Step 6/9: Reconciling hierarchical forecasts...")
+    predictions = predict_lightgbm(model, valid_split)
+    valid_with_preds = valid_split.with_columns(pl.Series("prediction", predictions))
+
+    reconciled = reconcile_forecasts(
+        valid_with_preds,
+        hierarchy,
+        method="mint_shrink",
+    )
+    reconciled.write_parquet(models_dir / "reconciled_forecasts.parquet")
+    logger.info(f"  Reconciled forecasts: {reconciled.shape[0]:,} rows")
+
+    # Step 7: Compute SHAP values
+    logger.info("Step 7/9: Computing SHAP values...")
+    explainer = create_shap_explainer(model, train_split.select(FEATURE_COLS).to_pandas())
+
+    # Compute SHAP for a sample (full dataset too expensive)
+    sample = valid_split.sample(n=min(1000, valid_split.shape[0]), seed=42)
+    shap_values = compute_shap_values(explainer, sample.select(FEATURE_COLS).to_pandas())
+
+    import pickle
+    with open(models_dir / "shap_explainer.pkl", "wb") as f:
+        pickle.dump(explainer, f)
+    logger.info(f"  SHAP explainer saved")
+
+    # Step 8: Export to ONNX
+    logger.info("Step 8/9: Exporting to ONNX...")
+    onnx_path = models_dir / "model.onnx"
+    export_lightgbm_to_onnx(model, FEATURE_COLS, onnx_path)
+
+    # Step 9: Validate ONNX
+    logger.info("Step 9/9: Validating ONNX export...")
+    sample_input = sample.select(FEATURE_COLS).to_numpy()[:10]
+    expected_output = model.predict(sample_input)
+
+    onnx_valid = validate_onnx_model(onnx_path, sample_input, expected_output)
+    if not onnx_valid:
+        raise ValueError("ONNX validation failed - outputs don't match")
+    logger.info(f"  ✓ ONNX validation passed")
+
+    # Save metrics
+    with open(models_dir / "metrics.json", "w") as f:
+        json.dump(metrics, f, indent=2)
+
+    logger.info("=" * 50)
+    logger.info("Training complete!")
+    logger.info(f"  CV RMSLE: {metrics['cv_rmsle']:.4f}")
+    logger.info(f"  Final RMSLE: {metrics['best_rmsle']:.4f}")
+    logger.info(f"  Artifacts saved to: {models_dir}")
+    logger.info("=" * 50)
+
+    return metrics
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train MLRF models")
+    parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
+    parser.add_argument("--processed-dir", type=Path, default=Path("data/processed"))
+    parser.add_argument("--features-dir", type=Path, default=Path("data/features"))
+    parser.add_argument("--models-dir", type=Path, default=Path("models"))
+    parser.add_argument("--rmsle-threshold", type=float, default=0.5)
+
+    args = parser.parse_args()
+
+    train_pipeline(
+        raw_dir=args.raw_dir,
+        processed_dir=args.processed_dir,
+        features_dir=args.features_dir,
+        models_dir=args.models_dir,
+        rmsle_threshold=args.rmsle_threshold,
+    )
+```
+
+#### 10. Package Entry Point
+**File**: `mlrf-ml/src/mlrf_ml/__main__.py`
+
+```python
+"""Entry point for python -m mlrf_ml."""
+from mlrf_ml.train import train_pipeline
+
+if __name__ == "__main__":
+    train_pipeline()
+```
+
 ### Success Criteria:
 
 #### Automated Verification (ALL must pass):
@@ -2492,7 +2696,512 @@ echo ""
 echo "=== ALL INTEGRATION TESTS PASSED ==="
 ```
 
-**Completion Signal**: When all 10 checks pass, output `PHASE_1_5_COMPLETE` and `ALL_PHASES_COMPLETE`
+**Completion Signal**: When all 10 checks pass, output `PHASE_1_5_COMPLETE`
+
+---
+
+## Phase 1.6: End-to-End Verification (Days 29-30)
+
+### Overview
+Run the complete system end-to-end, validate all quality gates, and produce verification artifacts proving the system works correctly.
+
+### 1. Full Pipeline Execution Script
+**File**: `scripts/run_full_pipeline.sh`
+
+```bash
+#!/bin/bash
+# Run the complete MLRF pipeline from raw data to running system
+set -e
+
+echo "=========================================="
+echo "  MLRF Full Pipeline Execution"
+echo "=========================================="
+
+# Step 1: Verify raw data exists
+echo ""
+echo "Step 1/7: Verifying raw data..."
+REQUIRED_FILES="train.csv oil.csv stores.csv holidays_events.csv transactions.csv"
+for file in $REQUIRED_FILES; do
+    if [[ ! -f "data/raw/$file" ]]; then
+        echo "ERROR: Missing data/raw/$file"
+        echo "Run: python -c \"from kaggle.api.kaggle_api_extended import KaggleApi; api = KaggleApi(); api.authenticate(); api.competition_download_files('store-sales-time-series-forecasting', path='data/raw')\""
+        exit 1
+    fi
+done
+echo "  ✓ All raw data files present"
+
+# Step 2: Install Python packages
+echo ""
+echo "Step 2/7: Installing Python packages..."
+pip install -e mlrf-data/ -e "mlrf-ml/[dev]" --quiet
+echo "  ✓ Packages installed"
+
+# Step 3: Run training pipeline
+echo ""
+echo "Step 3/7: Running training pipeline (this takes 10-30 minutes)..."
+cd mlrf-ml && python -m mlrf_ml.train --rmsle-threshold 0.5
+cd ..
+
+# Verify artifacts
+REQUIRED_ARTIFACTS="models/model.onnx models/lightgbm_model.txt models/metrics.json models/shap_explainer.pkl"
+for artifact in $REQUIRED_ARTIFACTS; do
+    if [[ ! -f "$artifact" ]]; then
+        echo "ERROR: Training did not produce $artifact"
+        exit 1
+    fi
+done
+echo "  ✓ All model artifacts created"
+
+# Step 4: Validate model quality
+echo ""
+echo "Step 4/7: Validating model quality..."
+python -c "
+import json
+with open('models/metrics.json') as f:
+    metrics = json.load(f)
+rmsle = metrics['best_rmsle']
+if rmsle >= 0.5:
+    print(f'FAIL: RMSLE {rmsle:.4f} >= 0.5 threshold')
+    exit(1)
+print(f'  ✓ RMSLE: {rmsle:.4f} (below 0.5 threshold)')
+"
+
+# Step 5: Build Docker images
+echo ""
+echo "Step 5/7: Building Docker images..."
+docker-compose build --quiet
+echo "  ✓ Docker images built"
+
+# Step 6: Start services
+echo ""
+echo "Step 6/7: Starting services..."
+docker-compose up -d
+
+# Wait for services to be healthy
+echo "  Waiting for services to be healthy..."
+sleep 10
+for i in {1..30}; do
+    if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+        echo "  ✓ API healthy"
+        break
+    fi
+    if [[ $i -eq 30 ]]; then
+        echo "ERROR: API did not become healthy"
+        docker-compose logs api
+        exit 1
+    fi
+    sleep 2
+done
+
+for i in {1..30}; do
+    if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+        echo "  ✓ Dashboard healthy"
+        break
+    fi
+    if [[ $i -eq 30 ]]; then
+        echo "ERROR: Dashboard did not become healthy"
+        docker-compose logs dashboard
+        exit 1
+    fi
+    sleep 2
+done
+
+# Step 7: Run integration tests
+echo ""
+echo "Step 7/7: Running integration tests..."
+./scripts/integration_tests.sh
+
+echo ""
+echo "=========================================="
+echo "  FULL PIPELINE COMPLETE"
+echo "=========================================="
+echo ""
+echo "System is running at:"
+echo "  - API: http://localhost:8080"
+echo "  - Dashboard: http://localhost:3000"
+echo ""
+echo "To stop: docker-compose down"
+```
+
+### 2. Integration Tests Script
+**File**: `scripts/integration_tests.sh`
+
+```bash
+#!/bin/bash
+# Integration tests for running MLRF system
+set -e
+
+echo "Running integration tests..."
+
+# Test 1: Health check
+echo -n "  Health check... "
+curl -sf http://localhost:8080/health | jq -e '.status == "ok"' > /dev/null
+echo "PASS"
+
+# Test 2: Predict endpoint
+echo -n "  Predict endpoint... "
+PREDICTION=$(curl -sf -X POST http://localhost:8080/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "store_nbr": 1,
+    "family": "GROCERY I",
+    "date": "2017-08-01",
+    "horizon": 90,
+    "features": [2017,8,1,1,213,0,0,50.5,0,1,5,1,0,100,120,130,140,150,10,12,14,16,5,6,7,8,0]
+  }')
+echo "$PREDICTION" | jq -e '.prediction > 0' > /dev/null
+echo "PASS (prediction: $(echo $PREDICTION | jq -r '.prediction'))"
+
+# Test 3: Batch predict
+echo -n "  Batch predict... "
+BATCH=$(curl -sf -X POST http://localhost:8080/predict/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "requests": [
+      {"store_nbr": 1, "family": "GROCERY I", "date": "2017-08-01", "horizon": 90, "features": [2017,8,1,1,213,0,0,50.5,0,1,5,1,0,100,120,130,140,150,10,12,14,16,5,6,7,8,0]},
+      {"store_nbr": 2, "family": "BEVERAGES", "date": "2017-08-01", "horizon": 90, "features": [2017,8,1,1,213,0,0,50.5,0,1,5,1,0,100,120,130,140,150,10,12,14,16,5,6,7,8,0]}
+    ]
+  }')
+echo "$BATCH" | jq -e '.predictions | length == 2' > /dev/null
+echo "PASS"
+
+# Test 4: Explain endpoint
+echo -n "  Explain endpoint... "
+EXPLAIN=$(curl -sf -X POST http://localhost:8080/explain \
+  -H "Content-Type: application/json" \
+  -d '{
+    "store_nbr": 1,
+    "family": "GROCERY I",
+    "date": "2017-08-01",
+    "horizon": 90,
+    "features": [2017,8,1,1,213,0,0,50.5,0,1,5,1,0,100,120,130,140,150,10,12,14,16,5,6,7,8,0]
+  }')
+echo "$EXPLAIN" | jq -e '.shap_values | length > 0' > /dev/null
+echo "PASS ($(echo $EXPLAIN | jq '.shap_values | length') SHAP values)"
+
+# Test 5: Hierarchy endpoint
+echo -n "  Hierarchy endpoint... "
+HIERARCHY=$(curl -sf "http://localhost:8080/hierarchy?date=2017-08-01")
+echo "$HIERARCHY" | jq -e '.children | length > 0' > /dev/null
+echo "PASS ($(echo $HIERARCHY | jq '.children | length') stores)"
+
+# Test 6: Cache hit test (second request should be faster)
+echo -n "  Cache performance... "
+TIME1=$(curl -sf -o /dev/null -w "%{time_total}" -X POST http://localhost:8080/predict \
+  -H "Content-Type: application/json" \
+  -d '{"store_nbr": 1, "family": "GROCERY I", "date": "2017-08-01", "horizon": 90, "features": [2017,8,1,1,213,0,0,50.5,0,1,5,1,0,100,120,130,140,150,10,12,14,16,5,6,7,8,0]}')
+TIME2=$(curl -sf -o /dev/null -w "%{time_total}" -X POST http://localhost:8080/predict \
+  -H "Content-Type: application/json" \
+  -d '{"store_nbr": 1, "family": "GROCERY I", "date": "2017-08-01", "horizon": 90, "features": [2017,8,1,1,213,0,0,50.5,0,1,5,1,0,100,120,130,140,150,10,12,14,16,5,6,7,8,0]}')
+echo "PASS (first: ${TIME1}s, cached: ${TIME2}s)"
+
+# Test 7: P95 latency test
+echo -n "  P95 latency (<10ms)... "
+LATENCIES=""
+for i in {1..50}; do
+  LAT=$(curl -sf -o /dev/null -w "%{time_total}" -X POST http://localhost:8080/predict \
+    -H "Content-Type: application/json" \
+    -d '{"store_nbr": 1, "family": "GROCERY I", "date": "2017-08-01", "horizon": 90, "features": [2017,8,1,1,213,0,0,50.5,0,1,5,1,0,100,120,130,140,150,10,12,14,16,5,6,7,8,0]}')
+  LATENCIES="$LATENCIES$LAT\n"
+done
+P95=$(echo -e "$LATENCIES" | sort -n | tail -3 | head -1)
+P95_MS=$(echo "$P95 * 1000" | bc)
+if (( $(echo "$P95 > 0.010" | bc -l) )); then
+  echo "FAIL (P95: ${P95_MS}ms > 10ms)"
+  exit 1
+fi
+echo "PASS (P95: ${P95_MS}ms)"
+
+# Test 8: Dashboard loads
+echo -n "  Dashboard loads... "
+curl -sf http://localhost:3000 | grep -q "MLRF" || curl -sf http://localhost:3000 | grep -q "html"
+echo "PASS"
+
+echo ""
+echo "=== ALL INTEGRATION TESTS PASSED ==="
+```
+
+### 3. Quality Gates Configuration
+**File**: `quality_gates.yaml`
+
+```yaml
+# MLRF Quality Gates - All must pass for production deployment
+version: 1
+
+model_quality:
+  rmsle_threshold: 0.5
+  min_cv_folds: 3
+  reconciliation_tolerance: 0.01  # 1% hierarchy sum tolerance
+
+api_performance:
+  p95_latency_ms: 10
+  p99_latency_ms: 50
+  cache_hit_rate_min: 0.8  # After warmup
+  health_check_timeout_s: 5
+
+data_quality:
+  max_null_ratio: 0.01  # 1% max nulls
+  required_columns:
+    - store_nbr
+    - family
+    - date
+    - sales
+  min_rows: 3000000  # ~3M training rows
+
+system_health:
+  all_services_healthy: true
+  redis_connected: true
+  model_loaded: true
+```
+
+### 4. Verification Report Generator
+**File**: `scripts/generate_verification_report.py`
+
+```python
+"""Generate verification report proving system meets all quality gates."""
+import json
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+import polars as pl
+import yaml
+
+
+def run_cmd(cmd: str) -> tuple[int, str]:
+    """Run command and return exit code + output."""
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    return result.returncode, result.stdout + result.stderr
+
+
+def main():
+    report = {
+        "generated_at": datetime.now().isoformat(),
+        "quality_gates": {},
+        "all_passed": True,
+    }
+
+    # Load quality gates
+    with open("quality_gates.yaml") as f:
+        gates = yaml.safe_load(f)
+
+    # Check model quality
+    print("Checking model quality...")
+    with open("models/metrics.json") as f:
+        metrics = json.load(f)
+
+    rmsle = metrics.get("best_rmsle", 999)
+    rmsle_pass = rmsle < gates["model_quality"]["rmsle_threshold"]
+    report["quality_gates"]["model_rmsle"] = {
+        "value": rmsle,
+        "threshold": gates["model_quality"]["rmsle_threshold"],
+        "passed": rmsle_pass,
+    }
+    if not rmsle_pass:
+        report["all_passed"] = False
+
+    # Check data quality
+    print("Checking data quality...")
+    features = pl.read_parquet("data/features/features.parquet")
+    null_ratio = features.null_count().sum_horizontal()[0] / (features.shape[0] * features.shape[1])
+    null_pass = null_ratio < gates["data_quality"]["max_null_ratio"]
+    report["quality_gates"]["data_null_ratio"] = {
+        "value": float(null_ratio),
+        "threshold": gates["data_quality"]["max_null_ratio"],
+        "passed": null_pass,
+    }
+    if not null_pass:
+        report["all_passed"] = False
+
+    row_count = features.shape[0]
+    row_pass = row_count >= gates["data_quality"]["min_rows"]
+    report["quality_gates"]["data_row_count"] = {
+        "value": row_count,
+        "threshold": gates["data_quality"]["min_rows"],
+        "passed": row_pass,
+    }
+    if not row_pass:
+        report["all_passed"] = False
+
+    # Check reconciliation
+    print("Checking hierarchy reconciliation...")
+    reconciled = pl.read_parquet("models/reconciled_forecasts.parquet")
+    if "level" in reconciled.columns:
+        total_pred = reconciled.filter(pl.col("level") == "Total")["prediction"].sum()
+        store_sum = reconciled.filter(pl.col("level") == "Store")["prediction"].sum()
+        if total_pred > 0:
+            recon_error = abs(total_pred - store_sum) / total_pred
+            recon_pass = recon_error < gates["model_quality"]["reconciliation_tolerance"]
+            report["quality_gates"]["reconciliation"] = {
+                "value": float(recon_error),
+                "threshold": gates["model_quality"]["reconciliation_tolerance"],
+                "passed": recon_pass,
+            }
+            if not recon_pass:
+                report["all_passed"] = False
+
+    # Check artifacts exist
+    print("Checking artifacts...")
+    required_artifacts = [
+        "models/model.onnx",
+        "models/lightgbm_model.txt",
+        "models/metrics.json",
+        "models/shap_explainer.pkl",
+        "models/reconciled_forecasts.parquet",
+        "data/features/features.parquet",
+        "data/features/hierarchy.parquet",
+    ]
+    missing = [a for a in required_artifacts if not Path(a).exists()]
+    artifacts_pass = len(missing) == 0
+    report["quality_gates"]["artifacts"] = {
+        "required": required_artifacts,
+        "missing": missing,
+        "passed": artifacts_pass,
+    }
+    if not artifacts_pass:
+        report["all_passed"] = False
+
+    # Summary
+    print("")
+    print("=" * 50)
+    print("VERIFICATION REPORT")
+    print("=" * 50)
+    for gate, result in report["quality_gates"].items():
+        status = "✓ PASS" if result["passed"] else "✗ FAIL"
+        print(f"  {gate}: {status}")
+    print("")
+    print(f"Overall: {'ALL GATES PASSED' if report['all_passed'] else 'SOME GATES FAILED'}")
+    print("=" * 50)
+
+    # Save report
+    with open("verification_report.json", "w") as f:
+        json.dump(report, f, indent=2)
+    print(f"\nReport saved to: verification_report.json")
+
+    return 0 if report["all_passed"] else 1
+
+
+if __name__ == "__main__":
+    exit(main())
+```
+
+### 5. Dashboard E2E Tests (Playwright)
+**File**: `mlrf-dashboard/e2e/dashboard.spec.ts`
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('MLRF Dashboard', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('http://localhost:3000');
+  });
+
+  test('loads homepage', async ({ page }) => {
+    await expect(page).toHaveTitle(/MLRF|Dashboard|Forecasting/i);
+  });
+
+  test('displays hierarchy tree', async ({ page }) => {
+    // Wait for hierarchy to load
+    await page.waitForSelector('[data-testid="hierarchy-tree"]', { timeout: 10000 });
+
+    // Should show Total node
+    await expect(page.locator('text=Total')).toBeVisible();
+
+    // Click to expand
+    await page.click('text=Total');
+
+    // Should show store nodes
+    await expect(page.locator('[data-testid="store-node"]').first()).toBeVisible();
+  });
+
+  test('shows forecast chart', async ({ page }) => {
+    await page.waitForSelector('[data-testid="forecast-chart"]', { timeout: 10000 });
+
+    // Chart should have SVG
+    await expect(page.locator('[data-testid="forecast-chart"] svg')).toBeVisible();
+  });
+
+  test('shows SHAP waterfall', async ({ page }) => {
+    // Navigate to explainability
+    await page.click('text=Explainability');
+
+    // Wait for SHAP chart
+    await page.waitForSelector('[data-testid="shap-waterfall"]', { timeout: 10000 });
+
+    // Should show feature bars
+    await expect(page.locator('[data-testid="shap-bar"]').first()).toBeVisible();
+  });
+
+  test('model comparison works', async ({ page }) => {
+    // Navigate to comparison
+    await page.click('text=Compare');
+
+    // Should show model cards
+    await expect(page.locator('[data-testid="model-card"]').first()).toBeVisible();
+  });
+});
+```
+
+### 6. Playwright Configuration
+**File**: `mlrf-dashboard/playwright.config.ts`
+
+```typescript
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+  webServer: {
+    command: 'bun run preview',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+  },
+});
+```
+
+### Success Criteria:
+
+#### Automated Verification (ALL must pass):
+```bash
+# 1. Run full pipeline
+chmod +x scripts/run_full_pipeline.sh scripts/integration_tests.sh
+./scripts/run_full_pipeline.sh
+
+# 2. Generate verification report
+python scripts/generate_verification_report.py
+cat verification_report.json | jq -e '.all_passed == true'
+
+# 3. Run Dashboard E2E tests (requires Playwright)
+cd mlrf-dashboard
+bun add -d @playwright/test
+bunx playwright install chromium
+bunx playwright test
+
+# 4. All quality gates pass
+python -c "
+import json
+with open('verification_report.json') as f:
+    report = json.load(f)
+assert report['all_passed'], 'Quality gates failed'
+print('All quality gates passed!')
+"
+```
+
+**Completion Signal**: When all verifications pass, output `PHASE_1_6_COMPLETE` and `ALL_PHASES_COMPLETE`
 
 ---
 
