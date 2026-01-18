@@ -8,7 +8,9 @@
     "build": "bunx --bun vite build",
     "preview": "bunx --bun vite preview",
     "lint": "bunx eslint . --ext ts,tsx --max-warnings 0",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "test:e2e": "bunx playwright test",
+    "test:e2e:ui": "bunx playwright test --ui"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -28,6 +30,7 @@
     "lucide-react": "^0.344.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.41.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
