@@ -67,12 +67,22 @@ All Phase 1 tasks (Real Data Integration) are now complete.
   - Empty state for no search results with "Clear search" link
   - Search clears automatically on navigation/drill-down
   - TypeScript check and ESLint pass
+- [x] **2.3** Implement CSV export (commit e53f736)
+  - Created src/lib/export.ts with exportToCSV utility function
+  - Added Download icon and export button to ForecastChart header
+  - Wired handleExport in Dashboard to export current forecast data
+  - Filename includes context: store, family, date, horizon
+  - Button disabled when no data available
+  - TypeScript check and ESLint pass
+
+### Phase 2 Complete
+All Phase 2 tasks (Enhanced UX) are now complete.
 
 ### Next Up
-- [ ] **2.3** Implement CSV export
+- [ ] **3.1** Fix README port references
 
 ### Phase 3 (Future)
-- [ ] **3.1** Fix README port references
+- (No other tasks remaining after 3.1)
 
 ---
 
