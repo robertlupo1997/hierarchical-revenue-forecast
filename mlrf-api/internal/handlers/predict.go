@@ -72,25 +72,25 @@ func (h *Handlers) Predict(w http.ResponseWriter, r *http.Request) {
 
 	var req PredictRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, "invalid request body", CodeInvalidRequest)
 		return
 	}
 
 	// Validate request
 	if err := ValidateStoreNbr(req.StoreNbr); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 	if err := ValidateFamily(req.Family); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 	if err := ValidateDate(req.Date); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 	if err := ValidateFeatures(req.Features); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 
@@ -114,14 +114,14 @@ func (h *Handlers) Predict(w http.ResponseWriter, r *http.Request) {
 
 	// Run inference
 	if h.onnx == nil {
-		http.Error(w, `{"error":"model not loaded"}`, http.StatusServiceUnavailable)
+		WriteServiceUnavailable(w, r, "model not loaded", CodeModelUnavailable)
 		return
 	}
 
 	prediction, err := h.onnx.Predict(req.Features)
 	if err != nil {
 		log.Error().Err(err).Msg("inference failed")
-		http.Error(w, `{"error":"inference failed"}`, http.StatusInternalServerError)
+		WriteInternalError(w, r, "inference failed", CodeInferenceFailed)
 		return
 	}
 
@@ -159,32 +159,32 @@ func (h *Handlers) PredictBatch(w http.ResponseWriter, r *http.Request) {
 
 	var req BatchPredictRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, "invalid request body", CodeInvalidRequest)
 		return
 	}
 
 	// Validate batch size
 	if err := ValidateBatchSize(len(req.Predictions)); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 
 	// Validate each prediction in the batch
 	for i, pred := range req.Predictions {
 		if err := ValidateStoreNbr(pred.StoreNbr); err != nil {
-			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			WriteBadRequest(w, r, fmt.Sprintf("prediction[%d]: %s", i, err.Message), err.Code)
 			return
 		}
 		if err := ValidateFamily(pred.Family); err != nil {
-			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			WriteBadRequest(w, r, fmt.Sprintf("prediction[%d]: %s", i, err.Message), err.Code)
 			return
 		}
 		if err := ValidateDate(pred.Date); err != nil {
-			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			WriteBadRequest(w, r, fmt.Sprintf("prediction[%d]: %s", i, err.Message), err.Code)
 			return
 		}
 		if err := ValidateFeatures(pred.Features); err != nil {
-			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			WriteBadRequest(w, r, fmt.Sprintf("prediction[%d]: %s", i, err.Message), err.Code)
 			return
 		}
 	}
@@ -212,14 +212,14 @@ func (h *Handlers) PredictBatch(w http.ResponseWriter, r *http.Request) {
 
 		// Run inference
 		if h.onnx == nil {
-			http.Error(w, `{"error":"model not loaded"}`, http.StatusServiceUnavailable)
+			WriteServiceUnavailable(w, r, "model not loaded", CodeModelUnavailable)
 			return
 		}
 
 		prediction, err := h.onnx.Predict(pred.Features)
 		if err != nil {
 			log.Error().Err(err).Msg("batch inference failed")
-			http.Error(w, `{"error":"inference failed"}`, http.StatusInternalServerError)
+			WriteInternalError(w, r, "inference failed", CodeInferenceFailed)
 			return
 		}
 
@@ -265,25 +265,25 @@ func (h *Handlers) PredictSimple(w http.ResponseWriter, r *http.Request) {
 
 	var req SimplePredictRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, "invalid request body", CodeInvalidRequest)
 		return
 	}
 
 	// Validate request
 	if err := ValidateStoreNbr(req.StoreNbr); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 	if err := ValidateFamily(req.Family); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 	if err := ValidateDate(req.Date); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 	if err := ValidateHorizon(req.Horizon); err != nil {
-		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, err.Message, err.Code)
 		return
 	}
 
@@ -307,7 +307,7 @@ func (h *Handlers) PredictSimple(w http.ResponseWriter, r *http.Request) {
 
 	// Run inference
 	if h.onnx == nil {
-		http.Error(w, `{"error":"model not loaded"}`, http.StatusServiceUnavailable)
+		WriteServiceUnavailable(w, r, "model not loaded", CodeModelUnavailable)
 		return
 	}
 
@@ -324,7 +324,7 @@ func (h *Handlers) PredictSimple(w http.ResponseWriter, r *http.Request) {
 	prediction, err := h.onnx.Predict(features)
 	if err != nil {
 		log.Error().Err(err).Msg("inference failed")
-		http.Error(w, `{"error":"inference failed"}`, http.StatusInternalServerError)
+		WriteInternalError(w, r, "inference failed", CodeInferenceFailed)
 		return
 	}
 

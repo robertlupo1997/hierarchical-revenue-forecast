@@ -36,17 +36,17 @@ type ExplainResponse struct {
 func (h *Handlers) Explain(w http.ResponseWriter, r *http.Request) {
 	var req ExplainRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, "invalid request body", CodeInvalidRequest)
 		return
 	}
 
 	// Validate request
 	if req.StoreNbr <= 0 {
-		http.Error(w, `{"error":"store_nbr must be positive"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, "store_nbr must be positive", CodeInvalidStore)
 		return
 	}
 	if req.Family == "" {
-		http.Error(w, `{"error":"family is required"}`, http.StatusBadRequest)
+		WriteBadRequest(w, r, "family is required", CodeInvalidFamily)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *Handlers) Explain(w http.ResponseWriter, r *http.Request) {
 
 	var shapData map[string]ExplainResponse
 	if err := json.Unmarshal(data, &shapData); err != nil {
-		http.Error(w, `{"error":"failed to parse SHAP data"}`, http.StatusInternalServerError)
+		WriteInternalError(w, r, "failed to parse SHAP data", CodeParseError)
 		return
 	}
 
@@ -152,7 +152,7 @@ func (h *Handlers) Hierarchy(w http.ResponseWriter, r *http.Request) {
 
 	var hierarchy HierarchyNode
 	if err := json.Unmarshal(data, &hierarchy); err != nil {
-		http.Error(w, `{"error":"failed to parse hierarchy data"}`, http.StatusInternalServerError)
+		WriteInternalError(w, r, "failed to parse hierarchy data", CodeParseError)
 		return
 	}
 
