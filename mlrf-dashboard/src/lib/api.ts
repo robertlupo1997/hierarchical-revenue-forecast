@@ -20,6 +20,10 @@ export interface PredictResponse {
   family: string;
   date: string;
   prediction: number;
+  lower_80?: number;
+  upper_80?: number;
+  lower_95?: number;
+  upper_95?: number;
   cached: boolean;
   latency_ms: number;
 }

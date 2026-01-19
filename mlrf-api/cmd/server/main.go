@@ -99,6 +99,15 @@ func main() {
 	// Create handlers
 	h := handlers.NewHandlers(onnxSession, redisCache, featureStore)
 
+	// Load prediction intervals for confidence bands
+	intervalsPath := os.Getenv("INTERVALS_PATH")
+	if intervalsPath == "" {
+		intervalsPath = "models/prediction_intervals.json"
+	}
+	if err := h.LoadPredictionIntervals(intervalsPath); err != nil {
+		log.Warn().Str("path", intervalsPath).Msg("Running without prediction intervals")
+	}
+
 	// Setup router
 	r := chi.NewRouter()
 

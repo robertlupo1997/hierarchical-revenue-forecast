@@ -24,8 +24,24 @@ type PredictResponse struct {
 	Family     string  `json:"family"`
 	Date       string  `json:"date"`
 	Prediction float32 `json:"prediction"`
+	Lower80    float32 `json:"lower_80,omitempty"`
+	Upper80    float32 `json:"upper_80,omitempty"`
+	Lower95    float32 `json:"lower_95,omitempty"`
+	Upper95    float32 `json:"upper_95,omitempty"`
 	Cached     bool    `json:"cached"`
 	LatencyMs  float64 `json:"latency_ms"`
+}
+
+// PredictionIntervals holds the offsets for confidence intervals.
+// These are loaded from models/prediction_intervals.json generated during training.
+type PredictionIntervals struct {
+	Lower80Offset float32 `json:"lower_80_offset"`
+	Upper80Offset float32 `json:"upper_80_offset"`
+	Lower95Offset float32 `json:"lower_95_offset"`
+	Upper95Offset float32 `json:"upper_95_offset"`
+	Std           float32 `json:"std"`
+	MeanAbsError  float32 `json:"mean_abs_error"`
+	NSamples      int     `json:"n_samples"`
 }
 
 // BatchPredictRequest represents a batch prediction request.
@@ -306,11 +322,18 @@ func (h *Handlers) PredictSimple(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Compute confidence intervals
+	lower80, upper80, lower95, upper95 := h.applyIntervals(prediction)
+
 	resp := PredictResponse{
 		StoreNbr:   req.StoreNbr,
 		Family:     req.Family,
 		Date:       req.Date,
 		Prediction: prediction,
+		Lower80:    lower80,
+		Upper80:    upper80,
+		Lower95:    lower95,
+		Upper95:    upper95,
 		Cached:     false,
 		LatencyMs:  float64(time.Since(start).Microseconds()) / 1000,
 	}

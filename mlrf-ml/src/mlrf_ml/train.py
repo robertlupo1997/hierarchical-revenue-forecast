@@ -11,6 +11,7 @@ This module provides the main training pipeline that:
 """
 
 import argparse
+import json
 import logging
 import pickle
 from pathlib import Path
@@ -90,6 +91,63 @@ def lightgbm_cv_model_fn(train_df: pl.DataFrame, valid_df: pl.DataFrame) -> np.n
     """
     model, _ = train_lightgbm(train_df, valid_df)
     return predict_lightgbm(model, valid_df)
+
+
+def compute_prediction_intervals(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+) -> dict:
+    """
+    Compute empirical prediction intervals from residuals.
+
+    Uses percentile method on residuals to estimate prediction intervals.
+    This captures the actual forecast uncertainty from validation data.
+
+    Parameters
+    ----------
+    y_true : np.ndarray
+        Actual values
+    y_pred : np.ndarray
+        Predicted values
+
+    Returns
+    -------
+    dict
+        Dictionary with interval widths for 80% and 95% confidence levels
+    """
+    # Compute residuals (errors)
+    residuals = y_true - y_pred
+
+    # Compute percentiles for symmetric intervals
+    # 80% CI: 10th to 90th percentile
+    # 95% CI: 2.5th to 97.5th percentile
+    intervals = {
+        "lower_80_offset": float(np.percentile(residuals, 10)),
+        "upper_80_offset": float(np.percentile(residuals, 90)),
+        "lower_95_offset": float(np.percentile(residuals, 2.5)),
+        "upper_95_offset": float(np.percentile(residuals, 97.5)),
+        "std": float(np.std(residuals)),
+        "mean_abs_error": float(np.mean(np.abs(residuals))),
+        "n_samples": int(len(residuals)),
+    }
+
+    return intervals
+
+
+def save_prediction_intervals(intervals: dict, output_path: Path) -> None:
+    """
+    Save prediction intervals to JSON file for API use.
+
+    Parameters
+    ----------
+    intervals : dict
+        Prediction interval offsets
+    output_path : Path
+        Path to save JSON file
+    """
+    with open(output_path, "w") as f:
+        json.dump(intervals, f, indent=2)
+    logger.info(f"  Saved prediction intervals to {output_path}")
 
 
 def train_pipeline(
@@ -207,6 +265,16 @@ def train_pipeline(
     metrics["final_mae"] = final_metrics["mae"]
     logger.info(f"  Final RMSLE: {metrics['final_rmsle']:.4f}")
     logger.info(f"  Final RMSE: {metrics['final_rmse']:.2f}")
+
+    # Compute and save prediction intervals for API use
+    logger.info("  Computing prediction intervals...")
+    prediction_intervals = compute_prediction_intervals(y_true, predictions)
+    save_prediction_intervals(prediction_intervals, models_dir / "prediction_intervals.json")
+    metrics["prediction_intervals"] = prediction_intervals
+    logger.info(f"  80% CI: [{prediction_intervals['lower_80_offset']:.2f}, "
+                f"{prediction_intervals['upper_80_offset']:.2f}]")
+    logger.info(f"  95% CI: [{prediction_intervals['lower_95_offset']:.2f}, "
+                f"{prediction_intervals['upper_95_offset']:.2f}]")
 
     # Quality gate
     if metrics["final_rmsle"] >= rmsle_threshold:

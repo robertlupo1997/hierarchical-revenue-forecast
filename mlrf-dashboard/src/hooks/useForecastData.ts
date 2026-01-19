@@ -62,6 +62,10 @@ export function useForecastData(options: UseForecastDataOptions): ForecastDataRe
             return {
               date: dateStr,
               prediction: response.prediction,
+              lower_80: response.lower_80,
+              upper_80: response.upper_80,
+              lower_95: response.lower_95,
+              upper_95: response.upper_95,
               success: true,
             };
           } catch (error) {
@@ -69,7 +73,11 @@ export function useForecastData(options: UseForecastDataOptions): ForecastDataRe
             console.warn(`Failed to fetch prediction for ${dateStr}:`, error);
             return {
               date: dateStr,
-              prediction: null,
+              prediction: null as number | null,
+              lower_80: undefined as number | undefined,
+              upper_80: undefined as number | undefined,
+              lower_95: undefined as number | undefined,
+              upper_95: undefined as number | undefined,
               success: false,
             };
           }
@@ -79,19 +87,36 @@ export function useForecastData(options: UseForecastDataOptions): ForecastDataRe
       // Build forecast data points
       for (const pred of predictions) {
         if (pred.success && pred.prediction !== null) {
-          // Generate confidence intervals based on prediction value
-          // Using typical forecast uncertainty of ~10% for 80% CI and ~15% for 95% CI
           const forecast = pred.prediction;
-          const ci80Spread = forecast * 0.10;
-          const ci95Spread = forecast * 0.15;
+
+          // Use API-provided confidence intervals if available
+          // Falls back to approximate intervals if API doesn't provide them
+          const hasApiIntervals = pred.lower_80 !== undefined && pred.lower_80 !== 0;
+
+          let lower_80: number, upper_80: number, lower_95: number, upper_95: number;
+          if (hasApiIntervals) {
+            // Use intervals from API (computed from model validation residuals)
+            lower_80 = pred.lower_80!;
+            upper_80 = pred.upper_80!;
+            lower_95 = pred.lower_95!;
+            upper_95 = pred.upper_95!;
+          } else {
+            // Fallback: approximate intervals based on typical forecast uncertainty
+            const ci80Spread = forecast * 0.10;
+            const ci95Spread = forecast * 0.15;
+            lower_80 = Math.max(0, forecast - ci80Spread);
+            upper_80 = forecast + ci80Spread;
+            lower_95 = Math.max(0, forecast - ci95Spread);
+            upper_95 = forecast + ci95Spread;
+          }
 
           points.push({
             date: pred.date,
             forecast,
-            lower_80: Math.max(0, forecast - ci80Spread),
-            upper_80: forecast + ci80Spread,
-            lower_95: Math.max(0, forecast - ci95Spread),
-            upper_95: forecast + ci95Spread,
+            lower_80,
+            upper_80,
+            lower_95,
+            upper_95,
           });
         }
       }
