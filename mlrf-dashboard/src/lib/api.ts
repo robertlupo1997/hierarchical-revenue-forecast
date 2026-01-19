@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8081';
 
 export interface PredictRequest {
   store_nbr: number;
@@ -125,7 +125,7 @@ class ApiClient {
   }
 
   async getMetrics(): Promise<ModelMetric[]> {
-    return this.fetch<ModelMetric[]>('/metrics');
+    return this.fetch<ModelMetric[]>('/model-metrics');
   }
 }
 

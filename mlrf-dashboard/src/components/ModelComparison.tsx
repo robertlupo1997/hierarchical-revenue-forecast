@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Award, ChevronDown } from 'lucide-react';
 import type { ModelMetric } from '../lib/api';
 import { cn, formatNumber } from '../lib/utils';
 
@@ -42,10 +42,11 @@ export function ModelComparison({
     (a, b) => a[selectedMetric] - b[selectedMetric]
   );
 
+  // Theme-aware colors
   const getBarColor = (index: number) => {
-    if (index === 0) return '#10b981'; // Best model - green
-    if (index === sortedData.length - 1) return '#ef4444'; // Worst - red
-    return '#3b82f6'; // Others - blue
+    if (index === 0) return 'hsl(var(--success))'; // Best model
+    if (index === sortedData.length - 1) return 'hsl(var(--destructive))'; // Worst
+    return 'hsl(var(--accent))'; // Others
   };
 
   const bestModel = sortedData[0];
@@ -56,86 +57,117 @@ export function ModelComparison({
     : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header with metric selector */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold">Model Performance</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">
+            Model Performance
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
             {metricDescriptions[selectedMetric]}
           </p>
         </div>
-        <select
-          value={selectedMetric}
-          onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          {Object.entries(metricLabels).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={selectedMetric}
+            onChange={(e) => setSelectedMetric(e.target.value as MetricKey)}
+            className={cn(
+              'appearance-none rounded-lg border border-border bg-card px-4 py-2 pr-9 text-sm font-medium',
+              'text-foreground cursor-pointer',
+              'focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring',
+              'transition-colors duration-200'
+            )}
+          >
+            {Object.entries(metricLabels).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        </div>
       </div>
 
       {/* Chart */}
-      <ResponsiveContainer width="100%" height={250}>
-        <BarChart
-          data={sortedData}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-          <XAxis
-            type="number"
-            tickFormatter={(value) => formatNumber(value, 3)}
-            fontSize={11}
-          />
-          <YAxis
-            dataKey="model"
-            type="category"
-            width={90}
-            fontSize={11}
-            tickLine={false}
-          />
-          <Tooltip
-            formatter={(value: number) => [
-              formatNumber(value, 4),
-              metricLabels[selectedMetric],
-            ]}
-            labelFormatter={(label) => `Model: ${label}`}
-            contentStyle={{
-              backgroundColor: 'rgba(255,255,255,0.95)',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              fontSize: '12px',
-            }}
-          />
-          <Bar dataKey={selectedMetric} radius={[0, 4, 4, 0]}>
-            {sortedData.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={getBarColor(index)} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="rounded-xl border border-border/50 bg-card/30 p-4">
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart
+            data={sortedData}
+            layout="vertical"
+            margin={{ top: 5, right: 20, left: 100, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              horizontal
+              vertical={false}
+              stroke="hsl(var(--border))"
+            />
+            <XAxis
+              type="number"
+              tickFormatter={(value) => formatNumber(value, 3)}
+              fontSize={11}
+              stroke="hsl(var(--muted-foreground))"
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              dataKey="model"
+              type="category"
+              width={95}
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              stroke="hsl(var(--muted-foreground))"
+            />
+            <Tooltip
+              formatter={(value: number) => [
+                formatNumber(value, 4),
+                metricLabels[selectedMetric],
+              ]}
+              labelFormatter={(label) => `Model: ${label}`}
+              contentStyle={{
+                backgroundColor: 'hsl(var(--popover))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: 'hsl(var(--popover-foreground))',
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              }}
+              cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+            />
+            <Bar dataKey={selectedMetric} radius={[0, 6, 6, 0]}>
+              {sortedData.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={getBarColor(index)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
       {/* Best model highlight */}
       {bestModel && (
-        <div className="rounded-lg bg-green-50 p-4">
+        <div className="rounded-xl bg-success/10 border border-success/20 p-4">
           <div className="flex items-start gap-3">
-            <div className="rounded-full bg-green-100 p-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success/20 border border-success/30">
+              <Award className="h-5 w-5 text-success" />
             </div>
-            <div>
-              <div className="font-medium text-green-800">
-                Best Model: {bestModel.model}
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-success flex items-center gap-2">
+                Best Model
+                <span className="font-mono text-foreground">
+                  {bestModel.model}
+                </span>
               </div>
-              <div className="mt-1 text-sm text-green-700">
+              <div className="mt-1 text-sm text-success/80">
                 {metricLabels[selectedMetric]}:{' '}
-                {formatNumber(bestModel[selectedMetric], 4)}
+                <span className="font-mono font-medium">
+                  {formatNumber(bestModel[selectedMetric], 4)}
+                </span>
                 {improvement > 0 && (
-                  <span className="ml-2">
-                    ({formatNumber(improvement, 1)}% better than worst)
+                  <span className="ml-2 inline-flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    {formatNumber(improvement, 1)}% better than worst
                   </span>
                 )}
               </div>
@@ -145,21 +177,21 @@ export function ModelComparison({
       )}
 
       {/* All metrics table */}
-      <div className="overflow-hidden rounded-lg border">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-hidden rounded-xl border border-border">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Model
               </th>
               {Object.entries(metricLabels).map(([key, label]) => (
                 <th
                   key={key}
                   className={cn(
-                    'px-4 py-2 text-right text-xs font-medium uppercase',
+                    'px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider transition-colors',
                     key === selectedMetric
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-500'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground'
                   )}
                 >
                   {label}
@@ -167,26 +199,33 @@ export function ModelComparison({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-border bg-card">
             {sortedData.map((model, index) => (
               <tr
                 key={model.model}
-                className={index === 0 ? 'bg-green-50' : undefined}
+                className={cn(
+                  'transition-colors',
+                  index === 0 && 'bg-success/5'
+                )}
               >
-                <td className="whitespace-nowrap px-4 py-2 text-sm font-medium text-gray-900">
-                  {model.model}
-                  {index === 0 && (
-                    <span className="ml-2 text-green-600">★</span>
-                  )}
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-foreground">
+                  <div className="flex items-center gap-2">
+                    {model.model}
+                    {index === 0 && (
+                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-success/20 text-success">
+                        <Award className="h-3 w-3" />
+                      </span>
+                    )}
+                  </div>
                 </td>
                 {(['rmsle', 'mape', 'rmse'] as const).map((metric) => (
                   <td
                     key={metric}
                     className={cn(
-                      'whitespace-nowrap px-4 py-2 text-right text-sm',
+                      'whitespace-nowrap px-4 py-3 text-right text-sm font-mono transition-colors',
                       metric === selectedMetric
-                        ? 'bg-blue-50 font-medium text-blue-700'
-                        : 'text-gray-600'
+                        ? 'bg-primary/10 font-medium text-primary'
+                        : 'text-muted-foreground'
                     )}
                   >
                     {formatNumber(model[metric], 4)}

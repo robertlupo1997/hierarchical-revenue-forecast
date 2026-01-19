@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Line,
   XAxis,
@@ -10,7 +11,8 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { format } from 'date-fns';
-import { formatCurrency } from '../lib/utils';
+import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { formatCurrency, cn } from '../lib/utils';
 
 export interface ForecastDataPoint {
   date: string;
@@ -28,6 +30,63 @@ interface ForecastChartProps {
   showConfidenceIntervals?: boolean;
 }
 
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ dataKey: string; value: number; color: string }>;
+  label?: string;
+}) {
+  if (!active || !payload || !payload.length) return null;
+
+  const formatValue = (value: number | undefined) => {
+    if (value === undefined) return 'N/A';
+    return formatCurrency(value);
+  };
+
+  const actual = payload.find((p) => p.dataKey === 'actual')?.value;
+  const forecast = payload.find((p) => p.dataKey === 'forecast')?.value;
+  const upper95 = payload.find((p) => p.dataKey === 'upper_95')?.value;
+  const lower95 = payload.find((p) => p.dataKey === 'lower_95')?.value;
+
+  return (
+    <div className="rounded-lg border border-border bg-popover p-3 shadow-lg">
+      <p className="mb-2 text-xs font-medium text-muted-foreground">
+        {label}
+      </p>
+      <div className="space-y-1.5">
+        {actual !== undefined && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-muted-foreground">Actual</span>
+            <span className="font-mono text-sm font-medium text-foreground">
+              {formatValue(actual)}
+            </span>
+          </div>
+        )}
+        {forecast !== undefined && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-muted-foreground">Forecast</span>
+            <span className="font-mono text-sm font-medium text-primary">
+              {formatValue(forecast)}
+            </span>
+          </div>
+        )}
+        {upper95 !== undefined && lower95 !== undefined && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-muted-foreground">95% CI</span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {formatValue(lower95)} - {formatValue(upper95)}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ForecastChart({
   data,
   title,
@@ -41,10 +100,25 @@ export function ForecastChart({
     }
   };
 
-  const formatValue = (value: number | undefined) => {
-    if (value === undefined) return 'N/A';
-    return formatCurrency(value);
-  };
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const actuals = data.filter((d) => d.actual !== undefined).map((d) => d.actual!);
+    const forecasts = data.filter((d) => d.forecast !== undefined).map((d) => d.forecast!);
+
+    const avgActual = actuals.length > 0
+      ? actuals.reduce((a, b) => a + b, 0) / actuals.length
+      : 0;
+    const avgForecast = forecasts.length > 0
+      ? forecasts.reduce((a, b) => a + b, 0) / forecasts.length
+      : 0;
+
+    const trend = avgForecast > avgActual ? 'up' : avgForecast < avgActual ? 'down' : 'stable';
+    const trendPercent = avgActual > 0
+      ? Math.abs(((avgForecast - avgActual) / avgActual) * 100)
+      : 0;
+
+    return { avgActual, avgForecast, trend, trendPercent };
+  }, [data]);
 
   // Find the transition point between historical and forecast
   const transitionIndex = data.findIndex(
@@ -54,147 +128,192 @@ export function ForecastChart({
     transitionIndex > 0 ? data[transitionIndex - 1]?.date : null;
 
   return (
-    <div className="space-y-2">
-      {title && <h3 className="font-semibold text-gray-900">{title}</h3>}
-
-      <ResponsiveContainer width="100%" height={300}>
-        <ComposedChart
-          data={data}
-          margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis
-            dataKey="date"
-            tickFormatter={formatDate}
-            fontSize={11}
-            stroke="#9ca3af"
-            tickLine={false}
-          />
-          <YAxis
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-            fontSize={11}
-            stroke="#9ca3af"
-            tickLine={false}
-            width={60}
-          />
-          <Tooltip
-            labelFormatter={(label) => `Date: ${label}`}
-            formatter={(value: number, name: string) => {
-              const labels: Record<string, string> = {
-                actual: 'Actual',
-                forecast: 'Forecast',
-                upper_95: '95% Upper',
-                lower_95: '95% Lower',
-                upper_80: '80% Upper',
-                lower_80: '80% Lower',
-              };
-              return [formatValue(value), labels[name] || name];
-            }}
-            contentStyle={{
-              backgroundColor: 'rgba(255,255,255,0.95)',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              fontSize: '12px',
-            }}
-          />
-
-          {/* Transition line */}
-          {transitionDate && (
-            <ReferenceLine
-              x={transitionDate}
-              stroke="#9ca3af"
-              strokeDasharray="4 4"
-              label={{
-                value: 'Forecast Start',
-                position: 'top',
-                fontSize: 10,
-                fill: '#6b7280',
-              }}
-            />
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          {title && (
+            <h3 className="text-lg font-semibold tracking-tight text-foreground">
+              {title}
+            </h3>
           )}
-
-          {/* 95% Confidence interval */}
-          {showConfidenceIntervals && (
-            <Area
-              type="monotone"
-              dataKey="upper_95"
-              stroke="none"
-              fill="#bfdbfe"
-              fillOpacity={0.3}
-            />
-          )}
-          {showConfidenceIntervals && (
-            <Area
-              type="monotone"
-              dataKey="lower_95"
-              stroke="none"
-              fill="#ffffff"
-              fillOpacity={1}
-            />
-          )}
-
-          {/* 80% Confidence interval */}
-          {showConfidenceIntervals && (
-            <Area
-              type="monotone"
-              dataKey="upper_80"
-              stroke="none"
-              fill="#93c5fd"
-              fillOpacity={0.4}
-            />
-          )}
-          {showConfidenceIntervals && (
-            <Area
-              type="monotone"
-              dataKey="lower_80"
-              stroke="none"
-              fill="#ffffff"
-              fillOpacity={1}
-            />
-          )}
-
-          {/* Actual values */}
-          <Line
-            type="monotone"
-            dataKey="actual"
-            stroke="#1f2937"
-            strokeWidth={2}
-            dot={false}
-            connectNulls={false}
-          />
-
-          {/* Forecast values */}
-          <Line
-            type="monotone"
-            dataKey="forecast"
-            stroke="#3b82f6"
-            strokeWidth={2}
-            strokeDasharray="4 4"
-            dot={false}
-            connectNulls={false}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
-
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-6 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="h-0.5 w-4 bg-gray-900" />
-          <span>Historical</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-0.5 w-4 border-t-2 border-dashed border-blue-500" />
-          <span>Forecast</span>
+          <div
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+              stats.trend === 'up' && 'bg-success/10 text-success',
+              stats.trend === 'down' && 'bg-destructive/10 text-destructive',
+              stats.trend === 'stable' && 'bg-muted text-muted-foreground'
+            )}
+          >
+            {stats.trend === 'up' && <TrendingUp className="h-3 w-3" />}
+            {stats.trend === 'down' && <TrendingDown className="h-3 w-3" />}
+            {stats.trend === 'stable' && <Activity className="h-3 w-3" />}
+            <span>
+              {stats.trend === 'stable'
+                ? 'Stable'
+                : `${stats.trendPercent.toFixed(1)}% ${stats.trend}`}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="chart-container">
+        <ResponsiveContainer width="100%" height={320}>
+          <ComposedChart
+            data={data}
+            margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
+          >
+            <defs>
+              <linearGradient id="ci95Gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.15} />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+              </linearGradient>
+              <linearGradient id="ci80Gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+              </linearGradient>
+            </defs>
+
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="hsl(var(--border))"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDate}
+              fontSize={11}
+              stroke="hsl(var(--muted-foreground))"
+              tickLine={false}
+              axisLine={false}
+              dy={10}
+            />
+            <YAxis
+              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+              fontSize={11}
+              stroke="hsl(var(--muted-foreground))"
+              tickLine={false}
+              axisLine={false}
+              width={55}
+              dx={-5}
+            />
+            <Tooltip content={<CustomTooltip />} />
+
+            {/* Transition line */}
+            {transitionDate && (
+              <ReferenceLine
+                x={transitionDate}
+                stroke="hsl(var(--muted-foreground))"
+                strokeDasharray="4 4"
+                strokeOpacity={0.5}
+                label={{
+                  value: 'Forecast',
+                  position: 'insideTopRight',
+                  fontSize: 10,
+                  fill: 'hsl(var(--muted-foreground))',
+                  dy: -5,
+                }}
+              />
+            )}
+
+            {/* 95% Confidence interval */}
+            {showConfidenceIntervals && (
+              <>
+                <Area
+                  type="monotone"
+                  dataKey="upper_95"
+                  stroke="none"
+                  fill="url(#ci95Gradient)"
+                  fillOpacity={1}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="lower_95"
+                  stroke="none"
+                  fill="hsl(var(--card))"
+                  fillOpacity={1}
+                />
+              </>
+            )}
+
+            {/* 80% Confidence interval */}
+            {showConfidenceIntervals && (
+              <>
+                <Area
+                  type="monotone"
+                  dataKey="upper_80"
+                  stroke="none"
+                  fill="url(#ci80Gradient)"
+                  fillOpacity={1}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="lower_80"
+                  stroke="none"
+                  fill="hsl(var(--card))"
+                  fillOpacity={1}
+                />
+              </>
+            )}
+
+            {/* Actual values */}
+            <Line
+              type="monotone"
+              dataKey="actual"
+              stroke="hsl(var(--foreground))"
+              strokeWidth={2}
+              dot={false}
+              connectNulls={false}
+              activeDot={{
+                r: 4,
+                fill: 'hsl(var(--foreground))',
+                stroke: 'hsl(var(--card))',
+                strokeWidth: 2,
+              }}
+            />
+
+            {/* Forecast values */}
+            <Line
+              type="monotone"
+              dataKey="forecast"
+              stroke="hsl(var(--primary))"
+              strokeWidth={2.5}
+              strokeDasharray="6 4"
+              dot={false}
+              connectNulls={false}
+              activeDot={{
+                r: 4,
+                fill: 'hsl(var(--primary))',
+                stroke: 'hsl(var(--card))',
+                strokeWidth: 2,
+              }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="h-0.5 w-5 bg-foreground" />
+          <span className="text-muted-foreground">Historical</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-0.5 w-5 border-t-2 border-dashed border-primary" />
+          <span className="text-muted-foreground">Forecast</span>
         </div>
         {showConfidenceIntervals && (
           <>
             <div className="flex items-center gap-2">
-              <div className="h-3 w-4 rounded bg-blue-200 opacity-50" />
-              <span>80% CI</span>
+              <div className="h-3 w-5 rounded-sm bg-primary/30" />
+              <span className="text-muted-foreground">80% CI</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-3 w-4 rounded bg-blue-100 opacity-50" />
-              <span>95% CI</span>
+              <div className="h-3 w-5 rounded-sm bg-primary/15" />
+              <span className="text-muted-foreground">95% CI</span>
             </div>
           </>
         )}

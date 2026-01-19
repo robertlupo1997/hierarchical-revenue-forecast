@@ -3,7 +3,8 @@ import { Group } from '@visx/group';
 import { scaleBand, scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import { AxisBottom, AxisLeft } from '@visx/axis';
-import { useTooltip, TooltipWithBounds, defaultStyles } from '@visx/tooltip';
+import { useTooltip, TooltipWithBounds } from '@visx/tooltip';
+import { ArrowUp, ArrowDown, Target, Baseline } from 'lucide-react';
 import type { WaterfallFeature } from '../lib/api';
 
 interface ChartDataItem {
@@ -23,15 +24,6 @@ interface ShapWaterfallProps {
   height?: number;
 }
 
-const tooltipStyles = {
-  ...defaultStyles,
-  backgroundColor: 'rgba(0,0,0,0.9)',
-  color: 'white',
-  padding: '8px 12px',
-  borderRadius: '4px',
-  fontSize: '12px',
-};
-
 export function ShapWaterfall({
   baseValue,
   features,
@@ -39,9 +31,20 @@ export function ShapWaterfall({
   width = 600,
   height = 400,
 }: ShapWaterfallProps) {
-  const margin = { top: 20, right: 30, bottom: 40, left: 140 };
+  const margin = { top: 20, right: 30, bottom: 50, left: 140 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
+
+  // Theme-aware colors (using CSS variables, no memo needed)
+  const colors = {
+    positive: 'hsl(var(--destructive))', // red - pushes prediction up
+    negative: 'hsl(var(--accent))', // cyan - pushes prediction down
+    base: 'hsl(var(--muted-foreground))', // gray
+    prediction: 'hsl(var(--success))', // green
+    axis: 'hsl(var(--border))',
+    text: 'hsl(var(--muted-foreground))',
+    zeroLine: 'hsl(var(--muted-foreground))',
+  };
 
   const {
     tooltipOpen,
@@ -110,15 +113,15 @@ export function ShapWaterfall({
   const getBarColor = (direction: string) => {
     switch (direction) {
       case 'positive':
-        return '#ef4444'; // red - pushes prediction up
+        return colors.positive;
       case 'negative':
-        return '#3b82f6'; // blue - pushes prediction down
+        return colors.negative;
       case 'base':
-        return '#6b7280'; // gray
+        return colors.base;
       case 'prediction':
-        return '#10b981'; // green
+        return colors.prediction;
       default:
-        return '#6b7280';
+        return colors.base;
     }
   };
 
@@ -136,7 +139,7 @@ export function ShapWaterfall({
 
   return (
     <div className="relative">
-      <svg width={width} height={height}>
+      <svg width={width} height={height} className="overflow-visible">
         <Group left={margin.left} top={margin.top}>
           {/* Bars */}
           {chartData.map((d) => {
@@ -155,8 +158,11 @@ export function ShapWaterfall({
                 width={Math.max(barWidth, 1)}
                 height={barHeight}
                 fill={getBarColor(d.direction)}
-                rx={2}
-                className="cursor-pointer transition-opacity hover:opacity-80"
+                rx={4}
+                className="cursor-pointer transition-all duration-150 hover:opacity-80"
+                style={{
+                  filter: tooltipData?.name === d.name ? 'brightness(1.1)' : undefined,
+                }}
                 onMouseEnter={(e) => handleMouseEnter(e, d)}
                 onMouseLeave={hideTooltip}
               />
@@ -169,32 +175,35 @@ export function ShapWaterfall({
             x2={xScale(0)}
             y1={0}
             y2={innerHeight}
-            stroke="#9ca3af"
+            stroke={colors.zeroLine}
             strokeWidth={1}
             strokeDasharray="4,4"
+            strokeOpacity={0.5}
           />
 
           {/* Axes */}
           <AxisLeft
             scale={yScale}
-            stroke="#e5e7eb"
-            tickStroke="#e5e7eb"
+            stroke={colors.axis}
+            tickStroke={colors.axis}
             tickLabelProps={() => ({
               fontSize: 11,
               textAnchor: 'end',
               dy: '0.33em',
-              fill: '#374151',
+              fill: colors.text,
+              fontFamily: 'inherit',
             })}
           />
           <AxisBottom
             scale={xScale}
             top={innerHeight}
-            stroke="#e5e7eb"
-            tickStroke="#e5e7eb"
+            stroke={colors.axis}
+            tickStroke={colors.axis}
             tickLabelProps={() => ({
               fontSize: 11,
               textAnchor: 'middle',
-              fill: '#374151',
+              fill: colors.text,
+              fontFamily: 'var(--font-mono, ui-monospace)',
             })}
             tickFormat={(value) => {
               const num = value as number;
@@ -208,21 +217,29 @@ export function ShapWaterfall({
       </svg>
 
       {/* Legend */}
-      <div className="mt-2 flex items-center justify-center gap-4 text-xs">
-        <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-gray-500" />
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-muted-foreground/20">
+            <Baseline className="h-3 w-3 text-muted-foreground" />
+          </div>
           <span>Base</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-red-500" />
+        <div className="flex items-center gap-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-destructive/20">
+            <ArrowUp className="h-3 w-3 text-destructive" />
+          </div>
           <span>Increases prediction</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-blue-500" />
+        <div className="flex items-center gap-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-accent/20">
+            <ArrowDown className="h-3 w-3 text-accent" />
+          </div>
           <span>Decreases prediction</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-green-500" />
+        <div className="flex items-center gap-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded bg-success/20">
+            <Target className="h-3 w-3 text-success" />
+          </div>
           <span>Final</span>
         </div>
       </div>
@@ -232,20 +249,46 @@ export function ShapWaterfall({
         <TooltipWithBounds
           left={tooltipLeft}
           top={tooltipTop}
-          style={tooltipStyles}
+          style={{
+            position: 'absolute',
+            backgroundColor: 'hsl(var(--popover))',
+            color: 'hsl(var(--popover-foreground))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            fontSize: '12px',
+            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+            zIndex: 50,
+          }}
         >
-          <div className="space-y-1">
-            <div className="font-semibold">{tooltipData.name}</div>
+          <div className="space-y-1.5">
+            <div className="font-semibold text-foreground">{tooltipData.name}</div>
             {tooltipData.originalFeature && (
-              <div>
+              <div className="text-muted-foreground">
                 Feature Value:{' '}
-                {tooltipData.originalFeature.value?.toFixed(2) ?? 'N/A'}
+                <span className="font-mono font-medium text-foreground">
+                  {tooltipData.originalFeature.value?.toFixed(2) ?? 'N/A'}
+                </span>
               </div>
             )}
-            <div>
-              {tooltipData.direction === 'base' || tooltipData.direction === 'prediction'
-                ? `Value: ${tooltipData.value.toFixed(2)}`
-                : `SHAP: ${tooltipData.value > 0 ? '+' : ''}${tooltipData.value.toFixed(4)}`}
+            <div className="text-muted-foreground">
+              {tooltipData.direction === 'base' || tooltipData.direction === 'prediction' ? (
+                <>
+                  Value:{' '}
+                  <span className="font-mono font-medium text-foreground">
+                    {tooltipData.value.toFixed(2)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  SHAP:{' '}
+                  <span className={`font-mono font-medium ${
+                    tooltipData.value > 0 ? 'text-destructive' : 'text-accent'
+                  }`}>
+                    {tooltipData.value > 0 ? '+' : ''}{tooltipData.value.toFixed(4)}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </TooltipWithBounds>
