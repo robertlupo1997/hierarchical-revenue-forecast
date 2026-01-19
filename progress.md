@@ -400,7 +400,7 @@ NEXTSTEPS_COMPLETE
 - [x] **2.4** Alerting Rules
 
 ### Phase 3: Testing
-- [ ] **3.1** React Component Unit Tests (Vitest)
+- [x] **3.1** React Component Unit Tests (Vitest)
 - [ ] **3.2** API Load Tests (k6)
 - [ ] **3.3** Failure Scenario Tests
 
@@ -579,5 +579,19 @@ NEXTSTEPS_COMPLETE
 
 ### Phase 2 Complete - Observability
 
+- [x] **3.1** React Component Unit Tests (Vitest) (commit 83f350a)
+  - Added Vitest testing framework (v1.3.1) with jsdom environment
+  - Added @testing-library/react (v14.2.1) and @testing-library/jest-dom (v6.4.2)
+  - Created vitest.config.ts with path aliases and coverage settings
+  - Created src/test/setup.ts with mocks for ResizeObserver, matchMedia, scrollTo
+  - Test files created:
+    - HorizonSelect.test.tsx (13 tests): dropdown options, value changes, accessibility
+    - ForecastChart.test.tsx (23 tests): rendering, trend badges, export dropdown
+    - ModelComparison.test.tsx (24 tests): metric selection, sorting, best model highlight
+    - HierarchyDrilldown.test.tsx (29 tests): navigation, search, breadcrumbs, empty states
+  - Total: 89 unit tests passing
+  - TypeScript and ESLint checks pass
+  - Run with: `cd mlrf-dashboard && bun run test` (or `npm test`)
+
 ### Current Task
-- [ ] **3.1** React Component Unit Tests (Vitest) - NEXT UP
+- [ ] **3.2** API Load Tests (k6) - NEXT UP
