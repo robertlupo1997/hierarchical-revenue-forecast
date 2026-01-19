@@ -18,6 +18,7 @@ import { ShapWaterfall } from '../components/ShapWaterfall';
 import { HierarchyDrilldown } from '../components/HierarchyDrilldown';
 import { ModelComparison } from '../components/ModelComparison';
 import { ForecastChart, type ForecastDataPoint } from '../components/ForecastChart';
+import { HorizonSelect, type ForecastHorizon } from '../components/HorizonSelect';
 import {
   fetchExplanation,
   fetchHierarchy,
@@ -182,6 +183,7 @@ export function Dashboard() {
   const [selectedDate, setSelectedDate] = useState('2017-08-01');
   const [selectedStore, setSelectedStore] = useState(1);
   const [selectedFamily, setSelectedFamily] = useState('GROCERY I');
+  const [horizon, setHorizon] = useState<ForecastHorizon>(90);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch hierarchy data
@@ -267,7 +269,7 @@ export function Dashboard() {
                   Multi-LOB Revenue Forecasting
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  90-day hierarchical forecast with SHAP explainability
+                  {horizon}-day hierarchical forecast with SHAP explainability
                 </p>
               </div>
             </div>
@@ -283,6 +285,9 @@ export function Dashboard() {
                   className="bg-transparent text-sm focus:outline-none"
                 />
               </div>
+
+              {/* Horizon selector */}
+              <HorizonSelect value={horizon} onChange={setHorizon} />
 
               {/* Refresh button */}
               <button
@@ -325,7 +330,7 @@ export function Dashboard() {
             icon={TrendingUp}
             label="Total Forecast"
             value="$5.25M"
-            subValue="90-day projection"
+            subValue={`${horizon}-day projection`}
             trend="up"
             delay={0}
           />
