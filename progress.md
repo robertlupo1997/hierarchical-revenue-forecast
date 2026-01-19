@@ -358,8 +358,17 @@ REDESIGN_COMPLETE
   - Triggers on push/PR to master and main branches
   - YAML syntax validated
 
+- [x] **4.2** More Export Formats (Excel, PDF) (commit ee0aba8)
+  - Added xlsx (^0.18.5), jspdf (^2.5.1), jspdf-autotable (^3.8.1) dependencies
+  - Extended export.ts with exportToExcel() and exportToPDF() functions
+  - Excel export creates workbook with Summary and Forecast Data sheets
+  - PDF export generates formatted report with header, summary stats, and styled table
+  - Added ExportDropdown component to ForecastChart (CSV/Excel/PDF menu)
+  - Export dropdown with icons and keyboard-accessible menu
+  - TypeScript check and build pass
+
 ### Current Task
-- [ ] **4.2** More Export Formats (Excel, PDF) - NEXT
+- [ ] **4.3** Forecast Accuracy Visualization - NEXT
 
 ### Remaining Tasks
-- [ ] **4.3** Forecast Accuracy Visualization
+(none - 4.3 is the final task)
