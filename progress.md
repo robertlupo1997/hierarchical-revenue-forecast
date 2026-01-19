@@ -395,7 +395,7 @@ NEXTSTEPS_COMPLETE
 
 ### Phase 2: Observability
 - [x] **2.1** Prometheus Metrics Exporter
-- [ ] **2.2** Grafana Dashboard
+- [x] **2.2** Grafana Dashboard
 - [ ] **2.3** Distributed Tracing (OpenTelemetry)
 - [ ] **2.4** Alerting Rules
 
@@ -519,5 +519,19 @@ NEXTSTEPS_COMPLETE
   - Created prometheus_test.go and metrics_test.go with comprehensive unit tests
   - Note: Go not installed in WSL; run `go test ./internal/metrics/... ./internal/middleware/...` manually
 
+- [x] **2.2** Grafana Dashboard
+  - Created deploy/grafana/mlrf-dashboard.json with 17 panels:
+    - Overview: Request Rate, P95 Latency, Error Rate, Cache Hit Ratio (stat panels)
+    - Request Metrics: Request Rate by Endpoint, Latency Percentiles (P50/P95/P99), Status Code distribution
+    - Cache & Inference: Cache Hit Ratio timeline, ONNX Inference Latency, Cache Hits vs Misses, Predictions/sec
+    - System Health: Active Connections, Rate Limit Rejections, Feature Store Lookups, Batch Size, Specialized Endpoint Latency
+  - Created deploy/grafana/provisioning/dashboards/dashboards.yml for auto-provisioning
+  - Created deploy/grafana/provisioning/datasources/datasources.yml with Prometheus datasource
+  - Created deploy/prometheus/prometheus.yml with scrape configs for MLRF API
+  - Created docker-compose.monitoring.yml with Prometheus v2.48.0 and Grafana 10.2.3
+  - Monitoring stack accessible at Prometheus (9090), Grafana (3001)
+  - All YAML/JSON files validated successfully
+  - Run with: docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+
 ### Current Task
-- [ ] **2.2** Grafana Dashboard - NEXT UP
+- [ ] **2.3** Distributed Tracing (OpenTelemetry) - NEXT UP

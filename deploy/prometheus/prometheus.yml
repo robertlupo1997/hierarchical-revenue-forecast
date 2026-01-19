@@ -1,0 +1,51 @@
+# Prometheus configuration for MLRF
+# Scrapes metrics from the MLRF API service
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'mlrf-monitor'
+
+# Alerting configuration (optional, requires Alertmanager)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
+
+# Rule files for alerting (configured in Task 2.4)
+rule_files:
+  # - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: /metrics
+
+  # MLRF API service
+  - job_name: 'mlrf-api'
+    static_configs:
+      - targets: ['api:8081']
+    metrics_path: /metrics/prometheus
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+  # MLRF API (Docker Compose network name)
+  - job_name: 'mlrf-api-docker'
+    static_configs:
+      - targets: ['mlrf-api:8081']
+    metrics_path: /metrics/prometheus
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+  # MLRF API (localhost for development)
+  - job_name: 'mlrf-api-local'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+    metrics_path: /metrics/prometheus
+    scrape_interval: 5s
+    scrape_timeout: 5s
