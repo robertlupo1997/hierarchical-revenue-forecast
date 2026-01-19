@@ -21,6 +21,7 @@ services:
       - PORT=8081
       - MODEL_PATH=/app/models/lightgbm_model.onnx
       - FEATURE_PATH=/app/data/features/feature_matrix.parquet
+      - API_KEY=${MLRF_API_KEY:-}
     depends_on:
       redis:
         condition: service_healthy
@@ -40,6 +41,7 @@ services:
       - "3000:80"
     environment:
       - VITE_API_URL=http://localhost:8081
+      - VITE_API_KEY=${MLRF_API_KEY:-}
     depends_on:
       - api
     restart: unless-stopped

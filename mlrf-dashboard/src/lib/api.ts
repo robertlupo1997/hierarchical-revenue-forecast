@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8081';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
 
 export interface PredictRequest {
   store_nbr: number;
@@ -107,12 +108,20 @@ class ApiClient {
     options?: RequestInit
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+    };
+
+    // Merge with any headers passed in options
+    if (options?.headers) {
+      const optHeaders = options.headers as Record<string, string>;
+      Object.assign(headers, optHeaders);
+    }
+
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     });
 
     if (!response.ok) {

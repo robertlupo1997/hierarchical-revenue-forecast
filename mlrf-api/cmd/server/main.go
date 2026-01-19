@@ -18,6 +18,7 @@ import (
 	"github.com/mlrf/mlrf-api/internal/features"
 	"github.com/mlrf/mlrf-api/internal/handlers"
 	"github.com/mlrf/mlrf-api/internal/inference"
+	mlrfmiddleware "github.com/mlrf/mlrf-api/internal/middleware"
 )
 
 func main() {
@@ -123,7 +124,7 @@ func main() {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
 
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
@@ -133,6 +134,9 @@ func main() {
 			next.ServeHTTP(w, r)
 		})
 	})
+
+	// API Key authentication middleware (optional - controlled by API_KEY env var)
+	r.Use(mlrfmiddleware.APIKeyAuth)
 
 	// Routes
 	r.Get("/health", h.Health)
