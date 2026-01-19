@@ -119,21 +119,10 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
 
-	// CORS middleware for dashboard
-	r.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
-
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
-	})
+	// CORS middleware for dashboard (configurable via CORS_ORIGINS env var)
+	corsConfig := mlrfmiddleware.NewCORSConfig()
+	log.Info().Strs("origins", corsConfig.AllowedOrigins).Msg("CORS configuration loaded")
+	r.Use(mlrfmiddleware.CORS(corsConfig))
 
 	// API Key authentication middleware (optional - controlled by API_KEY env var)
 	r.Use(mlrfmiddleware.APIKeyAuth)

@@ -22,6 +22,7 @@ services:
       - MODEL_PATH=/app/models/lightgbm_model.onnx
       - FEATURE_PATH=/app/data/features/feature_matrix.parquet
       - API_KEY=${MLRF_API_KEY:-}
+      - CORS_ORIGINS=${MLRF_CORS_ORIGINS:-http://localhost:3000}
     depends_on:
       redis:
         condition: service_healthy
