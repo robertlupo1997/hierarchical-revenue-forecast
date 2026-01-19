@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -136,6 +137,9 @@ func main() {
 	// API Key authentication middleware (optional - controlled by API_KEY env var)
 	r.Use(mlrfmiddleware.APIKeyAuth)
 
+	// Prometheus metrics middleware (must be after auth to capture authenticated requests)
+	r.Use(mlrfmiddleware.PrometheusMetrics)
+
 	// Routes
 	r.Get("/health", h.Health)
 	r.Post("/predict", h.Predict)
@@ -146,6 +150,7 @@ func main() {
 	r.Get("/metrics", h.Metrics)
 	r.Get("/model-metrics", h.ModelMetrics)
 	r.Get("/accuracy", h.Accuracy)
+	r.Handle("/metrics/prometheus", promhttp.Handler())
 
 	// Start server
 	srv := &http.Server{

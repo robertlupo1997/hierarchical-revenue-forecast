@@ -394,7 +394,7 @@ NEXTSTEPS_COMPLETE
 - [x] **1.6** Kubernetes Deployment Manifests
 
 ### Phase 2: Observability
-- [ ] **2.1** Prometheus Metrics Exporter
+- [x] **2.1** Prometheus Metrics Exporter
 - [ ] **2.2** Grafana Dashboard
 - [ ] **2.3** Distributed Tracing (OpenTelemetry)
 - [ ] **2.4** Alerting Rules
@@ -499,5 +499,25 @@ NEXTSTEPS_COMPLETE
 
 ### Phase 1 Complete - Security & Production Hardening
 
+- [x] **2.1** Prometheus Metrics Exporter
+  - Added prometheus/client_golang v1.18.0 dependency to go.mod
+  - Created mlrf-api/internal/metrics/prometheus.go with comprehensive metrics:
+    - mlrf_requests_total (counter): HTTP requests by endpoint, method, status
+    - mlrf_request_duration_seconds (histogram): Request latency by endpoint
+    - mlrf_cache_hits_total / mlrf_cache_misses_total (counters): Cache performance
+    - mlrf_inference_duration_seconds (histogram): ONNX inference latency
+    - mlrf_predictions_total (counter): Total predictions made
+    - mlrf_batch_size (histogram): Batch request sizes
+    - mlrf_active_connections (gauge): Current active connections
+    - mlrf_rate_limit_rejections_total (counter): Rate limit rejections
+    - mlrf_feature_store_lookups_total (counter): Feature store lookup results
+    - mlrf_hierarchy_request_duration_seconds / mlrf_explain_request_duration_seconds
+  - Created mlrf-api/internal/middleware/metrics.go with responseWriter wrapper
+  - Added /metrics/prometheus endpoint using promhttp.Handler()
+  - Updated rate limiter to record rejections in Prometheus
+  - Updated cache to record hits/misses in Prometheus
+  - Created prometheus_test.go and metrics_test.go with comprehensive unit tests
+  - Note: Go not installed in WSL; run `go test ./internal/metrics/... ./internal/middleware/...` manually
+
 ### Current Task
-- [ ] **2.1** Prometheus Metrics Exporter - NEXT UP
+- [ ] **2.2** Grafana Dashboard - NEXT UP

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mlrf/mlrf-api/internal/metrics"
 	"golang.org/x/time/rate"
 )
 
@@ -143,6 +144,9 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		limiter := rl.getLimiter(ip)
 
 		if !limiter.Allow() {
+			// Record rate limit rejection in Prometheus
+			metrics.RecordRateLimitRejection()
+
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("Retry-After", "1")
 			w.WriteHeader(http.StatusTooManyRequests)

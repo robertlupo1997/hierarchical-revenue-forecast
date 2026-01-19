@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mlrf/mlrf-api/internal/metrics"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -88,6 +89,7 @@ func (r *RedisCache) GetPrediction(ctx context.Context, key string) (*Prediction
 	// Check local cache first
 	if entry, ok := r.localCache[key]; ok {
 		if time.Now().Before(entry.expiresAt) {
+			metrics.RecordCacheHit()
 			return entry.result, nil
 		}
 		// Expired, remove from local cache
@@ -98,10 +100,14 @@ func (r *RedisCache) GetPrediction(ctx context.Context, key string) (*Prediction
 	data, err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
+			metrics.RecordCacheMiss()
 			return nil, fmt.Errorf("cache miss")
 		}
 		return nil, fmt.Errorf("redis get failed: %w", err)
 	}
+
+	// Redis hit (but local miss)
+	metrics.RecordCacheHit()
 
 	var result PredictionResult
 	if err := json.Unmarshal(data, &result); err != nil {
