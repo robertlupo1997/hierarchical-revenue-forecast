@@ -124,6 +124,15 @@ func main() {
 	log.Info().Strs("origins", corsConfig.AllowedOrigins).Msg("CORS configuration loaded")
 	r.Use(mlrfmiddleware.CORS(corsConfig))
 
+	// Rate limiting middleware (100 req/sec default, configurable via RATE_LIMIT_RPS/BURST)
+	rateLimitCfg := mlrfmiddleware.DefaultRateLimiterConfig()
+	rateLimiter := mlrfmiddleware.NewRateLimiter(rateLimitCfg)
+	log.Info().
+		Float64("rps", rateLimitCfg.RequestsPerSecond).
+		Int("burst", rateLimitCfg.BurstSize).
+		Msg("Rate limiter initialized")
+	r.Use(rateLimiter.Middleware)
+
 	// API Key authentication middleware (optional - controlled by API_KEY env var)
 	r.Use(mlrfmiddleware.APIKeyAuth)
 

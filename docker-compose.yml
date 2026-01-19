@@ -23,6 +23,8 @@ services:
       - FEATURE_PATH=/app/data/features/feature_matrix.parquet
       - API_KEY=${MLRF_API_KEY:-}
       - CORS_ORIGINS=${MLRF_CORS_ORIGINS:-http://localhost:3000}
+      - RATE_LIMIT_RPS=${MLRF_RATE_LIMIT_RPS:-100}
+      - RATE_LIMIT_BURST=${MLRF_RATE_LIMIT_BURST:-200}
     depends_on:
       redis:
         condition: service_healthy
