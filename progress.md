@@ -396,8 +396,8 @@ NEXTSTEPS_COMPLETE
 ### Phase 2: Observability
 - [x] **2.1** Prometheus Metrics Exporter
 - [x] **2.2** Grafana Dashboard
-- [ ] **2.3** Distributed Tracing (OpenTelemetry)
-- [ ] **2.4** Alerting Rules
+- [x] **2.3** Distributed Tracing (OpenTelemetry)
+- [x] **2.4** Alerting Rules
 
 ### Phase 3: Testing
 - [ ] **3.1** React Component Unit Tests (Vitest)
@@ -558,5 +558,26 @@ NEXTSTEPS_COMPLETE
     - tracing_test.go: 12 tests for middleware behavior
   - Note: Go not installed in WSL; run `go test ./internal/tracing/... ./internal/middleware/...` manually
 
+- [x] **2.4** Alerting Rules (commit 692e41d)
+  - Created deploy/prometheus/alerts.yml with 12 alerting rules across 3 groups:
+    - mlrf_slo_alerts: HighErrorRate (>1% 5xx), HighLatencyP99 (>100ms), HighLatencyP95 (>50ms), LowCacheHitRate (<50%)
+    - mlrf_operational_alerts: HighRateLimitRejections, HighInferenceLatency (>20ms), HierarchyEndpointSlow (>500ms), ExplainEndpointSlow (>1s), HighActiveConnections (>500), HighFeatureStoreFallback (>20%)
+    - mlrf_availability_alerts: APINoRequests (2min), PredictionRateDrop (>50%), MetricsScrapeFailed
+  - Created deploy/alertmanager/alertmanager.yml:
+    - Routing rules by severity (critical, warning) with different repeat intervals
+    - Inhibition rules to suppress cascading alerts (e.g., API down inhibits latency alerts)
+    - Three receivers: default, critical, warning with webhook configs
+    - Templates for email, Slack, PagerDuty notifications (commented, ready to configure)
+  - Updated deploy/prometheus/prometheus.yml:
+    - Added alerting section pointing to alertmanager:9093
+    - Added rule_files reference to alerts.yml
+  - Updated docker-compose.monitoring.yml:
+    - Added Alertmanager v0.26.0 service on port 9093
+    - Prometheus now depends on Alertmanager
+    - Added alertmanager_data volume
+  - All YAML files validated successfully
+
+### Phase 2 Complete - Observability
+
 ### Current Task
-- [ ] **2.4** Alerting Rules - NEXT UP
+- [ ] **3.1** React Component Unit Tests (Vitest) - NEXT UP
