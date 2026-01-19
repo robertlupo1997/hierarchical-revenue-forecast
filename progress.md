@@ -50,10 +50,25 @@ All Phase 1 tasks (Real Data Integration) are now complete.
   - Real hierarchy data gets trends added if not already present
   - Updated TypeScript HierarchyNode interface to include new fields
   - TypeScript check and ESLint pass
+- [x] **2.1** Calculate real trend badges (commit e1ff489)
+  - Updated StatCard component to accept trendPercent prop
+  - Added formatCurrency() helper for consistent currency display
+  - Added getTrendDirection() to classify trends with ±1% threshold
+  - Stat cards show real values: prediction, trend_percent, store count, RMSLE
+  - Stable trends (within ±1%) don't show badges
+  - Mock hierarchy includes trend_percent for fallback
+  - TypeScript check and ESLint pass
+- [x] **2.2** Add store search/filter to HierarchyDrilldown (commit 3bb9520)
+  - Added searchQuery state and filteredChildren memo
+  - Search input appears at store level (total level with >10 children)
+  - Filters stores by name or ID in real-time
+  - Shows "X of Y stores" count next to search
+  - Clear button (X icon) to reset search filter
+  - Empty state for no search results with "Clear search" link
+  - Search clears automatically on navigation/drill-down
+  - TypeScript check and ESLint pass
 
 ### Next Up
-- [ ] **2.1** Calculate real trend badges
-- [ ] **2.2** Add store search/filter to HierarchyDrilldown
 - [ ] **2.3** Implement CSV export
 
 ### Phase 3 (Future)
