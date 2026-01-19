@@ -533,5 +533,30 @@ NEXTSTEPS_COMPLETE
   - All YAML/JSON files validated successfully
   - Run with: docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
+- [x] **2.3** Distributed Tracing (OpenTelemetry)
+  - Added OpenTelemetry packages to go.mod (otel, otlptrace, otelhttp)
+  - Created mlrf-api/internal/tracing/otel.go with:
+    - TracerProvider struct with configurable sample rate and endpoint
+    - DefaultConfig() reads from OTEL_* environment variables
+    - Helper functions: StartSpan, SpanFromContext, SetSpanAttributes, RecordError, AddEvent
+    - Custom attribute keys for MLRF-specific telemetry (store_nbr, family, horizon, etc.)
+  - Created mlrf-api/internal/middleware/tracing.go with:
+    - Tracing() middleware using otelhttp for automatic span creation
+    - TracingMiddlewareWithFilter() to skip health/metrics endpoints
+    - InjectTraceContext() for extracting trace/span IDs
+  - Updated mlrf-api/cmd/server/main.go:
+    - Added tracer provider initialization with proper shutdown handling
+    - Added tracing middleware (skips /health and /metrics/prometheus)
+  - Added Jaeger (all-in-one:1.53) to docker-compose.monitoring.yml:
+    - UI accessible at http://localhost:16686
+    - OTLP HTTP receiver on port 4318
+  - Updated docker-compose.yml:
+    - Added OTEL_ENABLED, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_SERVICE_NAME env vars
+    - Added mlrf-network for communication with monitoring stack
+  - Created comprehensive unit tests:
+    - otel_test.go: 18 tests for config, provider, span operations
+    - tracing_test.go: 12 tests for middleware behavior
+  - Note: Go not installed in WSL; run `go test ./internal/tracing/... ./internal/middleware/...` manually
+
 ### Current Task
-- [ ] **2.3** Distributed Tracing (OpenTelemetry) - NEXT UP
+- [ ] **2.4** Alerting Rules - NEXT UP

@@ -8,6 +8,7 @@
 # Access:
 # - Prometheus: http://localhost:9090
 # - Grafana: http://localhost:3001 (admin/admin)
+# - Jaeger: http://localhost:16686 (trace UI)
 
 services:
   prometheus:
@@ -59,6 +60,27 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.53
+    container_name: mlrf-jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      # Jaeger UI
+      - "16686:16686"
+      # OTLP HTTP receiver (for OpenTelemetry)
+      - "4318:4318"
+      # OTLP gRPC receiver
+      - "4317:4317"
+    networks:
+      - mlrf-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:16686/"]
       interval: 10s
       timeout: 5s
       retries: 3

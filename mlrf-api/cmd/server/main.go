@@ -20,6 +20,7 @@ import (
 	"github.com/mlrf/mlrf-api/internal/handlers"
 	"github.com/mlrf/mlrf-api/internal/inference"
 	mlrfmiddleware "github.com/mlrf/mlrf-api/internal/middleware"
+	"github.com/mlrf/mlrf-api/internal/tracing"
 )
 
 func main() {
@@ -98,6 +99,21 @@ func main() {
 		log.Warn().Str("path", featurePath).Msg("Feature file not found, using zero features")
 	}
 
+	// Initialize OpenTelemetry tracing
+	tracingCfg := tracing.DefaultConfig()
+	tracerProvider, err := tracing.NewTracerProvider(tracingCfg)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to initialize tracing, running without distributed tracing")
+	} else if tracerProvider.IsEnabled() {
+		defer func() {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := tracerProvider.Shutdown(shutdownCtx); err != nil {
+				log.Error().Err(err).Msg("Failed to shutdown tracer provider")
+			}
+		}()
+	}
+
 	// Create handlers
 	h := handlers.NewHandlers(onnxSession, redisCache, featureStore)
 
@@ -119,6 +135,9 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
+
+	// OpenTelemetry tracing middleware (skip health and metrics endpoints for efficiency)
+	r.Use(mlrfmiddleware.TracingMiddlewareWithFilter(tracerProvider, []string{"/health", "/metrics/prometheus"}))
 
 	// CORS middleware for dashboard (configurable via CORS_ORIGINS env var)
 	corsConfig := mlrfmiddleware.NewCORSConfig()

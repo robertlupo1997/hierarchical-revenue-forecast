@@ -25,12 +25,19 @@ services:
       - CORS_ORIGINS=${MLRF_CORS_ORIGINS:-http://localhost:3000}
       - RATE_LIMIT_RPS=${MLRF_RATE_LIMIT_RPS:-100}
       - RATE_LIMIT_BURST=${MLRF_RATE_LIMIT_BURST:-200}
+      # OpenTelemetry tracing (connects to Jaeger when monitoring stack is running)
+      - OTEL_ENABLED=${OTEL_ENABLED:-true}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-jaeger:4318}
+      - OTEL_SERVICE_NAME=mlrf-api
     depends_on:
       redis:
         condition: service_healthy
     volumes:
       - ./models:/app/models:ro
       - ./data:/app/data:ro
+    networks:
+      - default
+      - mlrf-network
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8081/health"]
       interval: 10s
@@ -51,3 +58,8 @@ services:
 
 volumes:
   redis-data:
+
+networks:
+  mlrf-network:
+    name: mlrf-network
+    driver: bridge
