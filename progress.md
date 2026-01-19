@@ -41,8 +41,17 @@ Last mode: DASHBOARD
 ### Phase 1 Complete
 All Phase 1 tasks (Real Data Integration) are now complete.
 
-### Next Up (Phase 2: Enhanced UX)
-- [ ] **2.0** API: Add trend fields to hierarchy response
+### Phase 2: Enhanced UX - In Progress
+- [x] **2.0** API: Add trend fields to hierarchy response
+  - Added PreviousPrediction and TrendPercent fields to HierarchyNode struct
+  - Created calculateTrend() helper function
+  - Created addTrendToNode() to recursively add trend data
+  - Updated createMockHierarchy() to include trend calculations
+  - Real hierarchy data gets trends added if not already present
+  - Updated TypeScript HierarchyNode interface to include new fields
+  - TypeScript check and ESLint pass
+
+### Next Up
 - [ ] **2.1** Calculate real trend badges
 - [ ] **2.2** Add store search/filter to HierarchyDrilldown
 - [ ] **2.3** Implement CSV export

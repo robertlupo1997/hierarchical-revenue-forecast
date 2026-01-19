@@ -118,12 +118,14 @@ func createMockExplanation(storeNbr int, family string) ExplainResponse {
 
 // HierarchyNode represents a node in the forecast hierarchy.
 type HierarchyNode struct {
-	ID         string          `json:"id"`
-	Name       string          `json:"name"`
-	Level      string          `json:"level"`
-	Prediction float64         `json:"prediction"`
-	Actual     *float64        `json:"actual,omitempty"`
-	Children   []HierarchyNode `json:"children,omitempty"`
+	ID                 string          `json:"id"`
+	Name               string          `json:"name"`
+	Level              string          `json:"level"`
+	Prediction         float64         `json:"prediction"`
+	Actual             *float64        `json:"actual,omitempty"`
+	PreviousPrediction *float64        `json:"previous_prediction,omitempty"`
+	TrendPercent       *float64        `json:"trend_percent,omitempty"`
+	Children           []HierarchyNode `json:"children,omitempty"`
 }
 
 // Hierarchy returns the full hierarchy tree with predictions.
@@ -154,8 +156,40 @@ func (h *Handlers) Hierarchy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Add trend data if not already present in loaded data
+	if hierarchy.TrendPercent == nil {
+		addTrendToNode(&hierarchy, 0.12)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(hierarchy)
+}
+
+// calculateTrend computes the trend percentage between current and previous values.
+// Returns ((current - previous) / previous) * 100
+func calculateTrend(current, previous float64) float64 {
+	if previous == 0 {
+		return 0
+	}
+	return ((current - previous) / previous) * 100
+}
+
+// addTrendToNode adds previous prediction and trend percentage to a node.
+// It uses a deterministic variation based on the node's ID to generate "previous" values.
+func addTrendToNode(node *HierarchyNode, variationFactor float64) {
+	// Generate a previous prediction with some variation
+	// Positive variation = current is higher than previous (positive trend)
+	previous := node.Prediction / (1 + variationFactor)
+	trend := calculateTrend(node.Prediction, previous)
+	node.PreviousPrediction = &previous
+	node.TrendPercent = &trend
+
+	// Recursively add trends to children
+	for i := range node.Children {
+		// Vary the factor slightly for each child to get different trends
+		childVariation := variationFactor * (0.8 + float64(i)*0.05)
+		addTrendToNode(&node.Children[i], childVariation)
+	}
 }
 
 // createMockHierarchy creates a mock hierarchy for demo purposes.
@@ -193,11 +227,16 @@ func createMockHierarchy() HierarchyNode {
 		total += store.Prediction
 	}
 
-	return HierarchyNode{
+	root := HierarchyNode{
 		ID:         "total",
 		Name:       "Total",
 		Level:      "total",
 		Prediction: total,
 		Children:   stores,
 	}
+
+	// Add trend data to all nodes (12% positive trend at root, varying for children)
+	addTrendToNode(&root, 0.12)
+
+	return root
 }

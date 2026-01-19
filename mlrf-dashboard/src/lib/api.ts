@@ -53,6 +53,8 @@ export interface HierarchyNode {
   level: 'total' | 'store' | 'family' | 'bottom';
   prediction: number;
   actual?: number;
+  previous_prediction?: number;
+  trend_percent?: number;
   children?: HierarchyNode[];
 }
 
