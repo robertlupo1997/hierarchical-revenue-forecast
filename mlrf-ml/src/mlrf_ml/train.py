@@ -150,6 +150,104 @@ def save_prediction_intervals(intervals: dict, output_path: Path) -> None:
     logger.info(f"  Saved prediction intervals to {output_path}")
 
 
+def generate_accuracy_data(
+    valid_df: pl.DataFrame,
+    predictions: np.ndarray,
+    output_path: Path,
+    sample_size: int = 100,
+) -> dict:
+    """
+    Generate accuracy data comparing predicted vs actual values for visualization.
+
+    Creates aggregated daily data points showing model accuracy on held-out test data.
+    This is used by the dashboard to display predicted vs actual overlays.
+
+    Parameters
+    ----------
+    valid_df : pl.DataFrame
+        Validation dataframe with date and sales columns
+    predictions : np.ndarray
+        Model predictions for validation set
+    output_path : Path
+        Path to save the accuracy data JSON
+    sample_size : int
+        Maximum number of data points to include (aggregated by date)
+
+    Returns
+    -------
+    dict
+        Summary statistics about the accuracy data
+    """
+    # Add predictions to validation dataframe
+    valid_with_pred = valid_df.with_columns(
+        pl.Series("predicted", predictions)
+    )
+
+    # Aggregate by date to get daily totals
+    daily_data = (
+        valid_with_pred
+        .group_by("date")
+        .agg([
+            pl.col("sales").sum().alias("actual"),
+            pl.col("predicted").sum().alias("predicted"),
+        ])
+        .sort("date")
+    )
+
+    # Compute error for each day
+    daily_data = daily_data.with_columns(
+        (pl.col("actual") - pl.col("predicted")).alias("error"),
+        (
+            (pl.col("actual") - pl.col("predicted")).abs() / pl.col("actual") * 100
+        ).alias("mape"),
+    )
+
+    # Sample if too many points
+    if daily_data.height > sample_size:
+        # Take evenly spaced samples
+        step = daily_data.height // sample_size
+        daily_data = daily_data.gather_every(step)
+
+    # Convert to list of dicts for JSON
+    accuracy_data = []
+    for row in daily_data.iter_rows(named=True):
+        accuracy_data.append({
+            "date": str(row["date"]),
+            "actual": float(row["actual"]),
+            "predicted": float(row["predicted"]),
+            "error": float(row["error"]),
+            "mape": float(row["mape"]) if row["mape"] is not None else 0,
+        })
+
+    # Compute summary stats
+    summary = {
+        "data_points": len(accuracy_data),
+        "mean_actual": float(daily_data["actual"].mean()),
+        "mean_predicted": float(daily_data["predicted"].mean()),
+        "mean_error": float(daily_data["error"].mean()),
+        "mean_mape": float(daily_data["mape"].mean()),
+        "correlation": float(
+            np.corrcoef(
+                daily_data["actual"].to_numpy(),
+                daily_data["predicted"].to_numpy()
+            )[0, 1]
+        ),
+    }
+
+    # Save to JSON
+    output = {
+        "data": accuracy_data,
+        "summary": summary,
+    }
+    with open(output_path, "w") as f:
+        json.dump(output, f, indent=2)
+
+    logger.info(f"  Saved accuracy data to {output_path}")
+    logger.info(f"  Data points: {len(accuracy_data)}, Correlation: {summary['correlation']:.4f}")
+
+    return summary
+
+
 def train_pipeline(
     features_dir: Path = Path("data/features"),
     models_dir: Path = Path("models"),
@@ -275,6 +373,13 @@ def train_pipeline(
                 f"{prediction_intervals['upper_80_offset']:.2f}]")
     logger.info(f"  95% CI: [{prediction_intervals['lower_95_offset']:.2f}, "
                 f"{prediction_intervals['upper_95_offset']:.2f}]")
+
+    # Generate accuracy data for dashboard visualization
+    logger.info("  Generating accuracy data for visualization...")
+    accuracy_summary = generate_accuracy_data(
+        valid_df, predictions, models_dir / "accuracy_data.json"
+    )
+    metrics["accuracy_data"] = accuracy_summary
 
     # Quality gate
     if metrics["final_rmsle"] >= rmsle_threshold:

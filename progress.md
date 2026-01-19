@@ -367,8 +367,16 @@ REDESIGN_COMPLETE
   - Export dropdown with icons and keyboard-accessible menu
   - TypeScript check and build pass
 
-### Current Task
-- [ ] **4.3** Forecast Accuracy Visualization - NEXT
+- [x] **4.3** Forecast Accuracy Visualization (commit de5b781)
+  - Added `generate_accuracy_data()` function to train.py
+  - Saves `accuracy_data.json` with predicted vs actual values from validation
+  - Created Go `/accuracy` API endpoint in `mlrf-api/internal/handlers/accuracy.go`
+  - Returns real accuracy data or mock data if file unavailable
+  - Created `AccuracyChart` component in dashboard with Recharts
+  - Shows actual vs predicted overlay, error band, correlation, MAPE
+  - Integrated into Dashboard with useQuery for data fetching
+  - TypeScript and ESLint pass
 
-### Remaining Tasks
-(none - 4.3 is the final task)
+### ALL NEXT STEPS COMPLETE
+
+NEXTSTEPS_COMPLETE

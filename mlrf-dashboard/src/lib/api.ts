@@ -73,6 +73,28 @@ export interface HealthResponse {
   status: string;
 }
 
+export interface AccuracyDataPoint {
+  date: string;
+  actual: number;
+  predicted: number;
+  error: number;
+  mape: number;
+}
+
+export interface AccuracySummary {
+  data_points: number;
+  mean_actual: number;
+  mean_predicted: number;
+  mean_error: number;
+  mean_mape: number;
+  correlation: number;
+}
+
+export interface AccuracyResponse {
+  data: AccuracyDataPoint[];
+  summary: AccuracySummary;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -147,6 +169,10 @@ class ApiClient {
   async getMetrics(): Promise<ModelMetric[]> {
     return this.fetch<ModelMetric[]>('/model-metrics');
   }
+
+  async getAccuracy(): Promise<AccuracyResponse> {
+    return this.fetch<AccuracyResponse>('/accuracy');
+  }
 }
 
 export const apiClient = new ApiClient();
@@ -184,4 +210,8 @@ export async function fetchSimplePrediction(
     date,
     horizon,
   });
+}
+
+export async function fetchAccuracy(): Promise<AccuracyResponse> {
+  return apiClient.getAccuracy();
 }

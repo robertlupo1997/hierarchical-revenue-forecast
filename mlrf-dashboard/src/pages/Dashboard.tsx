@@ -18,14 +18,18 @@ import { ShapWaterfall } from '../components/ShapWaterfall';
 import { HierarchyDrilldown } from '../components/HierarchyDrilldown';
 import { ModelComparison } from '../components/ModelComparison';
 import { ForecastChart, type ForecastDataPoint } from '../components/ForecastChart';
+import { AccuracyChart } from '../components/AccuracyChart';
 import { HorizonSelect, type ForecastHorizon } from '../components/HorizonSelect';
 import { useForecastData } from '../hooks/useForecastData';
 import {
   fetchExplanation,
   fetchHierarchy,
   fetchMetrics,
+  fetchAccuracy,
   type HierarchyNode,
   type ModelMetric,
+  type AccuracyDataPoint,
+  type AccuracySummary,
 } from '../lib/api';
 import { cn } from '../lib/utils';
 import { exportData, type ExportFormat } from '../lib/export';
@@ -97,6 +101,33 @@ const mockForecastData: ForecastDataPoint[] = [
   { date: '2017-09-09', forecast: 52000, lower_80: 48000, upper_80: 56000, lower_95: 46000, upper_95: 58000 },
   { date: '2017-09-16', forecast: 51500, lower_80: 47000, upper_80: 56000, lower_95: 45000, upper_95: 58000 },
 ];
+
+const mockAccuracyData: AccuracyDataPoint[] = [
+  { date: '2017-07-01', actual: 850000, predicted: 830000, error: 20000, mape: 2.35 },
+  { date: '2017-07-02', actual: 920000, predicted: 905000, error: 15000, mape: 1.63 },
+  { date: '2017-07-03', actual: 880000, predicted: 890000, error: -10000, mape: 1.14 },
+  { date: '2017-07-04', actual: 950000, predicted: 935000, error: 15000, mape: 1.58 },
+  { date: '2017-07-05', actual: 910000, predicted: 920000, error: -10000, mape: 1.10 },
+  { date: '2017-07-06', actual: 870000, predicted: 865000, error: 5000, mape: 0.57 },
+  { date: '2017-07-07', actual: 890000, predicted: 882000, error: 8000, mape: 0.90 },
+  { date: '2017-07-08', actual: 940000, predicted: 955000, error: -15000, mape: 1.60 },
+  { date: '2017-07-09', actual: 980000, predicted: 965000, error: 15000, mape: 1.53 },
+  { date: '2017-07-10', actual: 920000, predicted: 930000, error: -10000, mape: 1.09 },
+  { date: '2017-07-11', actual: 895000, predicted: 888000, error: 7000, mape: 0.78 },
+  { date: '2017-07-12', actual: 910000, predicted: 918000, error: -8000, mape: 0.88 },
+  { date: '2017-07-13', actual: 945000, predicted: 940000, error: 5000, mape: 0.53 },
+  { date: '2017-07-14', actual: 985000, predicted: 970000, error: 15000, mape: 1.52 },
+  { date: '2017-07-15', actual: 1020000, predicted: 1005000, error: 15000, mape: 1.47 },
+];
+
+const mockAccuracySummary: AccuracySummary = {
+  data_points: 15,
+  mean_actual: 924000,
+  mean_predicted: 919800,
+  mean_error: 4800,
+  mean_mape: 1.24,
+  correlation: 0.95,
+};
 
 function LoadingSkeleton({ className }: { className?: string }) {
   return (
@@ -257,6 +288,18 @@ export function Dashboard() {
     horizon,
   });
 
+  // Fetch accuracy data
+  const {
+    data: accuracyData,
+    isLoading: accuracyLoading,
+    refetch: refetchAccuracy,
+  } = useQuery({
+    queryKey: ['accuracy'],
+    queryFn: fetchAccuracy,
+    retry: 1,
+    staleTime: 1000 * 60 * 10,
+  });
+
   const handleNodeSelect = (node: HierarchyNode) => {
     // Extract store/family from bottom-level selection
     if (node.level === 'bottom' || node.level === 'family') {
@@ -274,7 +317,7 @@ export function Dashboard() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([refetchHierarchy(), refetchExplanation(), refetchForecast()]);
+    await Promise.all([refetchHierarchy(), refetchExplanation(), refetchForecast(), refetchAccuracy()]);
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
@@ -297,7 +340,9 @@ export function Dashboard() {
   const displayHierarchy = hierarchyData ?? mockHierarchy;
   const displayMetrics = metricsData ?? mockModels;
   const displayForecast = forecastData && forecastData.length > 0 ? forecastData : mockForecastData;
-  const isUsingMockData = !hierarchyData || !metricsData || !forecastData || forecastData.length === 0;
+  const displayAccuracyData = accuracyData?.data ?? mockAccuracyData;
+  const displayAccuracySummary = accuracyData?.summary ?? mockAccuracySummary;
+  const isUsingMockData = !hierarchyData || !metricsData || !forecastData || forecastData.length === 0 || !accuracyData;
 
   return (
     <div className="min-h-screen bg-background">
@@ -485,6 +530,19 @@ export function Dashboard() {
                 showConfidenceIntervals={true}
                 onExport={handleExport}
                 exportEnabled={displayForecast.length > 0}
+              />
+            )}
+          </div>
+
+          {/* Accuracy Chart */}
+          <div className="card p-6 lg:col-span-2 animate-fade-in-up animation-delay-350">
+            {accuracyLoading ? (
+              <LoadingSkeleton className="h-64" />
+            ) : (
+              <AccuracyChart
+                data={displayAccuracyData}
+                summary={displayAccuracySummary}
+                title="Model Accuracy"
               />
             )}
           </div>

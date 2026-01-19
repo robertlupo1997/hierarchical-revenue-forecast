@@ -143,6 +143,7 @@ func main() {
 	r.Get("/hierarchy", h.Hierarchy)
 	r.Get("/metrics", h.Metrics)
 	r.Get("/model-metrics", h.ModelMetrics)
+	r.Get("/accuracy", h.Accuracy)
 
 	// Start server
 	srv := &http.Server{
