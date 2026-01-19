@@ -348,9 +348,18 @@ REDESIGN_COMPLETE
   - TestPredictSimple_ResponseStructure: validates request flow
   - Note: Go not installed in WSL; run `go test ./...` manually to verify
 
+- [x] **4.1** GitHub Actions CI/CD Pipeline (commit b8b96f2)
+  - Created `.github/workflows/ci.yml` with 5 jobs
+  - test-python: Python tests and linting for mlrf-data and mlrf-ml
+  - test-go: Build and test Go API with race detection
+  - test-dashboard: TypeScript, ESLint, and build validation
+  - e2e-tests: Playwright E2E tests with artifact upload on failure
+  - docker-build: Full Docker Compose build and health checks
+  - Triggers on push/PR to master and main branches
+  - YAML syntax validated
+
 ### Current Task
-- [ ] **4.1** GitHub Actions CI/CD Pipeline - NEXT
+- [ ] **4.2** More Export Formats (Excel, PDF) - NEXT
 
 ### Remaining Tasks
-- [ ] **4.2** More Export Formats (Excel, PDF)
 - [ ] **4.3** Forecast Accuracy Visualization
