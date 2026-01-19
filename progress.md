@@ -329,11 +329,19 @@ REDESIGN_COMPLETE
   - Updated useForecastData hook to use API-provided intervals
   - Falls back to approximate CIs if API intervals unavailable
 
+- [x] **3.1** E2E Tests for new dashboard features (commit 7f2eea9)
+  - Added 18 new Playwright tests for dashboard features
+  - Horizon Selector: dropdown visibility, all 4 options, default value, subtitle updates
+  - Date Picker: min/max bounds (2013-01-01 to 2017-08-15), default date, value changes
+  - CSV Export: button visibility, download icon, file download with correct naming
+  - Store Search: input visibility, filtering, store count, clear button, empty state
+  - Tests handle both mock (4 stores) and real (54 stores) data gracefully
+  - TypeScript check and ESLint pass
+
 ### Current Task
-- [ ] **3.1** E2E Tests for new dashboard features - NEXT
+- [ ] **3.2** API Integration Tests - NEXT
 
 ### Remaining Tasks
-- [ ] **3.2** API Integration Tests
 - [ ] **4.1** GitHub Actions CI/CD Pipeline
 - [ ] **4.2** More Export Formats (Excel, PDF)
 - [ ] **4.3** Forecast Accuracy Visualization
