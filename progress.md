@@ -309,11 +309,21 @@ REDESIGN_COMPLETE
   - Generates complete hierarchy: Total → 54 Stores → 33 Families (1,782 nodes)
   - Run with: `source .venv/bin/activate && python scripts/generate_hierarchy_json.py`
 
+- [x] **2.1** API Feature Store - Load real features from Parquet (commit 71d9092)
+  - Created mlrf-api/internal/features/store.go package
+  - Loads Parquet feature matrix at startup with in-memory index
+  - O(1) lookup by (store_nbr, family, date) key
+  - Falls back to aggregated (store+family) features, then zeros
+  - Thread-safe with RWMutex for concurrent access
+  - Added parquet-go v0.23.0 dependency
+  - Updated handlers to accept optional FeatureStore
+  - Updated docker-compose.yml to mount data volume
+  - Added comprehensive unit tests (store_test.go)
+
 ### Current Task
-- [ ] **2.1** API Feature Store - Load real features from Parquet - NEXT
+- [ ] **2.2** Real Confidence Intervals from API - NEXT
 
 ### Remaining Tasks
-- [ ] **2.2** Real Confidence Intervals from API
 - [ ] **3.1** E2E Tests for new dashboard features
 - [ ] **3.2** API Integration Tests
 - [ ] **4.1** GitHub Actions CI/CD Pipeline
