@@ -367,7 +367,7 @@ REDESIGN_COMPLETE
   - Export dropdown with icons and keyboard-accessible menu
   - TypeScript check and build pass
 
-- [x] **4.3** Forecast Accuracy Visualization (commit de5b781)
+- [x] **4.3** Forecast Accuracy Visualization (commit ab26925)
   - Added `generate_accuracy_data()` function to train.py
   - Saves `accuracy_data.json` with predicted vs actual values from validation
   - Created Go `/accuracy` API endpoint in `mlrf-api/internal/handlers/accuracy.go`
