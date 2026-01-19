@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import {
   Line,
   XAxis,
@@ -11,8 +11,9 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, Activity, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Download, ChevronDown, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
+import type { ExportFormat } from '../lib/export';
 
 export interface ForecastDataPoint {
   date: string;
@@ -28,7 +29,7 @@ interface ForecastChartProps {
   data: ForecastDataPoint[];
   title?: string;
   showConfidenceIntervals?: boolean;
-  onExport?: () => void;
+  onExport?: (format: ExportFormat) => void;
   exportEnabled?: boolean;
 }
 
@@ -85,6 +86,93 @@ function CustomTooltip({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ExportDropdown({
+  onExport,
+  disabled,
+}: {
+  onExport: (format: ExportFormat) => void;
+  disabled: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleExport = (format: ExportFormat) => {
+    onExport(format);
+    setIsOpen(false);
+  };
+
+  const exportOptions: { format: ExportFormat; label: string; icon: React.ElementType }[] = [
+    { format: 'csv', label: 'CSV', icon: FileText },
+    { format: 'excel', label: 'Excel', icon: FileSpreadsheet },
+    { format: 'pdf', label: 'PDF Report', icon: File },
+  ];
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={cn(
+          'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5',
+          'text-xs font-medium',
+          'bg-secondary text-secondary-foreground',
+          'transition-all duration-200',
+          'hover:bg-secondary/80',
+          'disabled:opacity-50 disabled:cursor-not-allowed'
+        )}
+        title={disabled ? 'No data to export' : 'Export forecast data'}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
+      >
+        <Download className="h-3.5 w-3.5" />
+        <span>Export</span>
+        <ChevronDown className={cn('h-3 w-3 transition-transform', isOpen && 'rotate-180')} />
+      </button>
+
+      {isOpen && !disabled && (
+        <div
+          className={cn(
+            'absolute right-0 top-full mt-1 z-50',
+            'min-w-[140px] rounded-lg border border-border bg-card shadow-lg',
+            'animate-in fade-in-0 zoom-in-95 duration-100'
+          )}
+          role="menu"
+        >
+          <div className="py-1">
+            {exportOptions.map(({ format, label, icon: Icon }) => (
+              <button
+                key={format}
+                onClick={() => handleExport(format)}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-2',
+                  'text-sm text-foreground',
+                  'transition-colors duration-150',
+                  'hover:bg-secondary/50'
+                )}
+                role="menuitem"
+              >
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -161,22 +249,7 @@ export function ForecastChart({
             </span>
           </div>
           {onExport && (
-            <button
-              onClick={onExport}
-              disabled={!exportEnabled}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5',
-                'text-xs font-medium',
-                'bg-secondary text-secondary-foreground',
-                'transition-all duration-200',
-                'hover:bg-secondary/80',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
-              title={exportEnabled ? 'Export to CSV' : 'No data to export'}
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export</span>
-            </button>
+            <ExportDropdown onExport={onExport} disabled={!exportEnabled} />
           )}
         </div>
       </div>

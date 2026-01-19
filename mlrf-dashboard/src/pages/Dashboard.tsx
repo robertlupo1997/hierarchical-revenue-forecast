@@ -28,7 +28,7 @@ import {
   type ModelMetric,
 } from '../lib/api';
 import { cn } from '../lib/utils';
-import { exportToCSV } from '../lib/export';
+import { exportData, type ExportFormat } from '../lib/export';
 
 // Mock data for initial development (used when API is unavailable)
 const mockModels: ModelMetric[] = [
@@ -278,15 +278,18 @@ export function Dashboard() {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const handleExport = () => {
+  const handleExport = (format: ExportFormat) => {
     if (displayForecast && displayForecast.length > 0) {
-      exportToCSV({
-        data: displayForecast,
-        storeNbr: selectedStore,
-        family: selectedFamily,
-        startDate: selectedDate,
-        horizon,
-      });
+      exportData(
+        {
+          data: displayForecast,
+          storeNbr: selectedStore,
+          family: selectedFamily,
+          startDate: selectedDate,
+          horizon,
+        },
+        format
+      );
     }
   };
 
