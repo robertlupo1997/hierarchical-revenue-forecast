@@ -11,7 +11,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Download } from 'lucide-react';
 import { formatCurrency, cn } from '../lib/utils';
 
 export interface ForecastDataPoint {
@@ -28,6 +28,8 @@ interface ForecastChartProps {
   data: ForecastDataPoint[];
   title?: string;
   showConfidenceIntervals?: boolean;
+  onExport?: () => void;
+  exportEnabled?: boolean;
 }
 
 
@@ -91,6 +93,8 @@ export function ForecastChart({
   data,
   title,
   showConfidenceIntervals = true,
+  onExport,
+  exportEnabled = false,
 }: ForecastChartProps) {
   const formatDate = (dateStr: string) => {
     try {
@@ -156,6 +160,24 @@ export function ForecastChart({
                 : `${stats.trendPercent.toFixed(1)}% ${stats.trend}`}
             </span>
           </div>
+          {onExport && (
+            <button
+              onClick={onExport}
+              disabled={!exportEnabled}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5',
+                'text-xs font-medium',
+                'bg-secondary text-secondary-foreground',
+                'transition-all duration-200',
+                'hover:bg-secondary/80',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+              title={exportEnabled ? 'Export to CSV' : 'No data to export'}
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export</span>
+            </button>
+          )}
         </div>
       </div>
 

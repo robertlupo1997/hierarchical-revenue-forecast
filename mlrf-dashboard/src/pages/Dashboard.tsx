@@ -28,6 +28,7 @@ import {
   type ModelMetric,
 } from '../lib/api';
 import { cn } from '../lib/utils';
+import { exportToCSV } from '../lib/export';
 
 // Mock data for initial development (used when API is unavailable)
 const mockModels: ModelMetric[] = [
@@ -277,6 +278,18 @@ export function Dashboard() {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
+  const handleExport = () => {
+    if (displayForecast && displayForecast.length > 0) {
+      exportToCSV({
+        data: displayForecast,
+        storeNbr: selectedStore,
+        family: selectedFamily,
+        startDate: selectedDate,
+        horizon,
+      });
+    }
+  };
+
   // Use mock data if API fails
   const displayHierarchy = hierarchyData ?? mockHierarchy;
   const displayMetrics = metricsData ?? mockModels;
@@ -467,6 +480,8 @@ export function Dashboard() {
                 data={displayForecast}
                 title={`Revenue Forecast - Store ${selectedStore}, ${selectedFamily}`}
                 showConfidenceIntervals={true}
+                onExport={handleExport}
+                exportEnabled={displayForecast.length > 0}
               />
             )}
           </div>
