@@ -9,6 +9,7 @@
 # - Prometheus: http://localhost:9090
 # - Grafana: http://localhost:3001 (admin/admin)
 # - Jaeger: http://localhost:16686 (trace UI)
+# - Alertmanager: http://localhost:9093
 
 services:
   prometheus:
@@ -23,15 +24,40 @@ services:
       - '--web.enable-admin-api'
     volumes:
       - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
     networks:
       - mlrf-network
+    depends_on:
+      alertmanager:
+        condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: mlrf-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--cluster.listen-address='
+    volumes:
+      - ./deploy/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - mlrf-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -94,4 +120,6 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  alertmanager_data:
     driver: local

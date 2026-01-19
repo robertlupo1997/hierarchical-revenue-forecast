@@ -7,16 +7,17 @@ global:
   external_labels:
     monitor: 'mlrf-monitor'
 
-# Alerting configuration (optional, requires Alertmanager)
+# Alerting configuration (requires Alertmanager)
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # - alertmanager:9093
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
 
-# Rule files for alerting (configured in Task 2.4)
+# Rule files for alerting
 rule_files:
-  # - "alerts.yml"
+  - "alerts.yml"
 
 # Scrape configurations
 scrape_configs:

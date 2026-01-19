@@ -1,0 +1,203 @@
+# Prometheus Alerting Rules for MLRF API
+# These rules define alerts for key SLOs and operational health
+
+groups:
+  - name: mlrf_slo_alerts
+    interval: 30s
+    rules:
+      # High Error Rate Alert
+      # Fires when >1% of requests return 5xx errors over 5 minutes
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(mlrf_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(mlrf_requests_total[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          service: mlrf-api
+        annotations:
+          summary: "High error rate on MLRF API"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 1%). Check API logs for details."
+          runbook_url: "https://docs.mlrf.local/runbooks/high-error-rate"
+
+      # High Latency Alert (P99)
+      # Fires when P99 latency exceeds 100ms for 5 minutes
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(mlrf_request_duration_seconds_bucket[5m])) by (le))
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "P99 latency exceeds 100ms"
+          description: "P99 latency is {{ $value | humanizeDuration }} (threshold: 100ms). Consider scaling or investigating slow requests."
+          runbook_url: "https://docs.mlrf.local/runbooks/high-latency"
+
+      # High Latency Alert (P95)
+      # Fires when P95 latency exceeds 50ms for 5 minutes (early warning)
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum(rate(mlrf_request_duration_seconds_bucket[5m])) by (le))
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "P95 latency exceeds 50ms"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 50ms). Monitor for potential degradation."
+
+      # Low Cache Hit Rate Alert
+      # Fires when cache hit rate drops below 50% for 10 minutes
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            rate(mlrf_cache_hits_total[5m])
+            /
+            (rate(mlrf_cache_hits_total[5m]) + rate(mlrf_cache_misses_total[5m]))
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "Cache hit rate below 50%"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%). Check Redis connectivity and cache TTL settings."
+          runbook_url: "https://docs.mlrf.local/runbooks/low-cache-hit"
+
+  - name: mlrf_operational_alerts
+    interval: 30s
+    rules:
+      # High Rate Limit Rejections
+      # Fires when rate limiting is rejecting >10 requests per minute
+      - alert: HighRateLimitRejections
+        expr: rate(mlrf_rate_limit_rejections_total[5m]) * 60 > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "High rate of rate-limited requests"
+          description: "Rate limit rejecting {{ $value | printf \"%.1f\" }} requests/min. Consider increasing limits or investigating traffic spike."
+
+      # High Inference Latency
+      # Fires when ONNX inference P99 exceeds 20ms
+      - alert: HighInferenceLatency
+        expr: |
+          histogram_quantile(0.99, rate(mlrf_inference_duration_seconds_bucket[5m]))
+          > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "ONNX inference latency high"
+          description: "Inference P99 is {{ $value | humanizeDuration }} (threshold: 20ms). Check model performance or server resources."
+
+      # Hierarchy Endpoint Slow
+      # Fires when hierarchy endpoint P95 exceeds 500ms
+      - alert: HierarchyEndpointSlow
+        expr: |
+          histogram_quantile(0.95, rate(mlrf_hierarchy_request_duration_seconds_bucket[5m]))
+          > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "Hierarchy endpoint slow"
+          description: "Hierarchy P95 is {{ $value | humanizeDuration }} (threshold: 500ms). Check data loading or aggregation performance."
+
+      # SHAP Explain Endpoint Slow
+      # Fires when explain endpoint P95 exceeds 1s
+      - alert: ExplainEndpointSlow
+        expr: |
+          histogram_quantile(0.95, rate(mlrf_explain_request_duration_seconds_bucket[5m]))
+          > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "SHAP explain endpoint slow"
+          description: "Explain P95 is {{ $value | humanizeDuration }} (threshold: 1s). SHAP computation may be bottlenecked."
+
+      # High Active Connections
+      # Fires when active connections exceed 500 for 5 minutes
+      - alert: HighActiveConnections
+        expr: mlrf_active_connections > 500
+        for: 5m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "High number of active connections"
+          description: "{{ $value }} active connections (threshold: 500). Consider connection pooling or scaling."
+
+      # Feature Store Zero Fallback Rate High
+      # Fires when >20% of feature lookups are falling back to zeros
+      - alert: HighFeatureStoreFallback
+        expr: |
+          (
+            rate(mlrf_feature_store_lookups_total{result="zero_fallback"}[5m])
+            /
+            sum(rate(mlrf_feature_store_lookups_total[5m]))
+          ) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "High feature store fallback rate"
+          description: "{{ $value | humanizePercentage }} of lookups falling back to zero features. Check feature store data completeness."
+
+  - name: mlrf_availability_alerts
+    interval: 30s
+    rules:
+      # API Down (No Requests)
+      # Fires when API receives no requests for 2 minutes (may indicate service down)
+      - alert: APINoRequests
+        expr: sum(rate(mlrf_requests_total[2m])) == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: mlrf-api
+        annotations:
+          summary: "MLRF API receiving no requests"
+          description: "No requests received in 2 minutes. Service may be down or unreachable."
+          runbook_url: "https://docs.mlrf.local/runbooks/api-down"
+
+      # Prediction Rate Drop
+      # Fires when prediction rate drops >50% compared to 1 hour ago
+      - alert: PredictionRateDrop
+        expr: |
+          (
+            sum(rate(mlrf_predictions_total[5m]))
+            /
+            sum(rate(mlrf_predictions_total[5m] offset 1h))
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: mlrf-api
+        annotations:
+          summary: "Significant drop in prediction rate"
+          description: "Prediction rate is {{ $value | humanizePercentage }} of rate 1 hour ago. Investigate potential issues."
+
+      # Target Scrape Failed
+      # Fires when Prometheus cannot scrape the MLRF API metrics endpoint
+      - alert: MetricsScrapeFailed
+        expr: up{job=~"mlrf-api.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: mlrf-api
+        annotations:
+          summary: "Cannot scrape MLRF API metrics"
+          description: "Prometheus cannot reach {{ $labels.instance }}. Service may be down or network issue."
+          runbook_url: "https://docs.mlrf.local/runbooks/scrape-failed"
