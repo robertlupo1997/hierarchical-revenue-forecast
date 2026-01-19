@@ -3,20 +3,23 @@ package handlers
 
 import (
 	"github.com/mlrf/mlrf-api/internal/cache"
+	"github.com/mlrf/mlrf-api/internal/features"
 	"github.com/mlrf/mlrf-api/internal/inference"
 )
 
 // Handlers holds dependencies for HTTP handlers.
 type Handlers struct {
-	onnx  *inference.ONNXSession
-	cache *cache.RedisCache
+	onnx         *inference.ONNXSession
+	cache        *cache.RedisCache
+	featureStore *features.Store
 }
 
 // NewHandlers creates a new Handlers instance.
-// cache can be nil if Redis is unavailable.
-func NewHandlers(onnx *inference.ONNXSession, c *cache.RedisCache) *Handlers {
+// cache and featureStore can be nil if unavailable.
+func NewHandlers(onnx *inference.ONNXSession, c *cache.RedisCache, fs *features.Store) *Handlers {
 	return &Handlers{
-		onnx:  onnx,
-		cache: c,
+		onnx:         onnx,
+		cache:        c,
+		featureStore: fs,
 	}
 }

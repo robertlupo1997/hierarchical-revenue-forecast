@@ -20,11 +20,13 @@ services:
       - REDIS_URL=redis://redis:6379
       - PORT=8081
       - MODEL_PATH=/app/models/lightgbm_model.onnx
+      - FEATURE_PATH=/app/data/features/feature_matrix.parquet
     depends_on:
       redis:
         condition: service_healthy
     volumes:
       - ./models:/app/models:ro
+      - ./data:/app/data:ro
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8081/health"]
       interval: 10s

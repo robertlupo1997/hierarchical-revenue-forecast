@@ -45,6 +45,7 @@ COPY --from=builder /app/server .
 # Environment variables
 ENV PORT=8081
 ENV MODEL_PATH=/app/models/lightgbm_model.onnx
+ENV FEATURE_PATH=/app/data/features/feature_matrix.parquet
 ENV ONNX_LIB_PATH=/usr/lib/libonnxruntime.so
 
 EXPOSE 8081

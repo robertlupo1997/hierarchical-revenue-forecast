@@ -269,15 +269,21 @@ func (h *Handlers) PredictSimple(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Run inference with mock features (27 zeros for now)
-	// Future: Look up real features from preprocessed feature matrix
+	// Run inference
 	if h.onnx == nil {
 		http.Error(w, `{"error":"model not loaded"}`, http.StatusServiceUnavailable)
 		return
 	}
 
-	// Generate 27 zero features (placeholder until feature store is implemented)
-	features := make([]float32, 27)
+	// Look up real features from feature store, or use zeros as fallback
+	var features []float32
+	if h.featureStore != nil && h.featureStore.IsLoaded() {
+		features, _ = h.featureStore.GetFeatures(req.StoreNbr, req.Family, req.Date)
+	} else {
+		// Fallback to zeros if feature store is unavailable
+		features = make([]float32, 27)
+		log.Debug().Msg("Feature store unavailable, using zero features")
+	}
 
 	prediction, err := h.onnx.Predict(features)
 	if err != nil {

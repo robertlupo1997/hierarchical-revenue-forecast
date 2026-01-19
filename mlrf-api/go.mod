@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/go-chi/chi/v5 v5.0.12
+	github.com/parquet-go/parquet-go v0.23.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/rs/zerolog v1.32.0
 	github.com/yalue/onnxruntime_go v1.10.0

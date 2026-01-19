@@ -9,7 +9,7 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	h := NewHandlers(nil, nil)
+	h := NewHandlers(nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
@@ -31,7 +31,7 @@ func TestHealth(t *testing.T) {
 }
 
 func TestPredictInvalidRequest(t *testing.T) {
-	h := NewHandlers(nil, nil)
+	h := NewHandlers(nil, nil, nil)
 
 	// Test with empty body
 	req := httptest.NewRequest(http.MethodPost, "/predict", bytes.NewReader([]byte("{}")))
@@ -45,7 +45,7 @@ func TestPredictInvalidRequest(t *testing.T) {
 }
 
 func TestPredictMissingFields(t *testing.T) {
-	h := NewHandlers(nil, nil)
+	h := NewHandlers(nil, nil, nil)
 
 	testCases := []struct {
 		name    string
@@ -72,7 +72,7 @@ func TestPredictMissingFields(t *testing.T) {
 }
 
 func TestExplainWithMockData(t *testing.T) {
-	h := NewHandlers(nil, nil)
+	h := NewHandlers(nil, nil, nil)
 
 	payload := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01"}`
 	req := httptest.NewRequest(http.MethodPost, "/explain", bytes.NewReader([]byte(payload)))
@@ -100,7 +100,7 @@ func TestExplainWithMockData(t *testing.T) {
 }
 
 func TestHierarchyMockData(t *testing.T) {
-	h := NewHandlers(nil, nil)
+	h := NewHandlers(nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/hierarchy?date=2017-08-01", nil)
 	w := httptest.NewRecorder()
@@ -127,7 +127,7 @@ func TestHierarchyMockData(t *testing.T) {
 }
 
 func TestMetrics(t *testing.T) {
-	h := NewHandlers(nil, nil)
+	h := NewHandlers(nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
 	w := httptest.NewRecorder()

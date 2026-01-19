@@ -293,3 +293,29 @@ Go is not installed in the WSL environment. Verification commands must be run ma
 ---
 
 REDESIGN_COMPLETE
+
+---
+
+## Next Steps Implementation
+
+### Completed Tasks
+- [x] **1.1** Remove docker-compose version (commit a932534)
+  - Deleted deprecated `version: '3.8'` line
+  - Docker Compose v2+ ignores this field
+  - Eliminates warning on every docker command
+- [x] **1.2** Generate real hierarchy_data.json with 54 stores (commit 38f18b2)
+  - Created scripts/generate_hierarchy_json.py
+  - Reads feature_matrix.parquet (2.8M rows)
+  - Generates complete hierarchy: Total → 54 Stores → 33 Families (1,782 nodes)
+  - Run with: `source .venv/bin/activate && python scripts/generate_hierarchy_json.py`
+
+### Current Task
+- [ ] **2.1** API Feature Store - Load real features from Parquet - NEXT
+
+### Remaining Tasks
+- [ ] **2.2** Real Confidence Intervals from API
+- [ ] **3.1** E2E Tests for new dashboard features
+- [ ] **3.2** API Integration Tests
+- [ ] **4.1** GitHub Actions CI/CD Pipeline
+- [ ] **4.2** More Export Formats (Excel, PDF)
+- [ ] **4.3** Forecast Accuracy Visualization

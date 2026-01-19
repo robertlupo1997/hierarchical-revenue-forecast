@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/mlrf/mlrf-api/internal/cache"
+	"github.com/mlrf/mlrf-api/internal/features"
 	"github.com/mlrf/mlrf-api/internal/handlers"
 	"github.com/mlrf/mlrf-api/internal/inference"
 )
@@ -38,6 +39,11 @@ func main() {
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis://localhost:6379"
+	}
+
+	featurePath := os.Getenv("FEATURE_PATH")
+	if featurePath == "" {
+		featurePath = "data/features/feature_matrix.parquet"
 	}
 
 	// Initialize ONNX Runtime
@@ -73,8 +79,25 @@ func main() {
 		defer redisCache.Close()
 	}
 
+	// Initialize feature store
+	var featureStore *features.Store
+	if _, statErr := os.Stat(featurePath); statErr == nil {
+		featureStore, err = features.NewStore(featurePath)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to load feature store, using zero features")
+		} else {
+			log.Info().
+				Str("path", featurePath).
+				Int("size", featureStore.Size()).
+				Int("aggregated", featureStore.AggregatedSize()).
+				Msg("Feature store loaded")
+		}
+	} else {
+		log.Warn().Str("path", featurePath).Msg("Feature file not found, using zero features")
+	}
+
 	// Create handlers
-	h := handlers.NewHandlers(onnxSession, redisCache)
+	h := handlers.NewHandlers(onnxSession, redisCache, featureStore)
 
 	// Setup router
 	r := chi.NewRouter()
