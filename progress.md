@@ -388,7 +388,7 @@ NEXTSTEPS_COMPLETE
 ### Phase 1: Security & Production Hardening
 - [x] **1.1** API Key Authentication middleware
 - [x] **1.2** CORS Restriction (whitelist origins)
-- [ ] **1.3** Rate Limiting (token bucket, 100 req/sec)
+- [x] **1.3** Rate Limiting (token bucket, 100 req/sec)
 - [ ] **1.4** Input Validation Enhancement
 - [ ] **1.5** Structured Error Responses
 - [ ] **1.6** Kubernetes Deployment Manifests
@@ -438,5 +438,20 @@ NEXTSTEPS_COMPLETE
   - Updated docker-compose.yml with MLRF_CORS_ORIGINS env var
   - Note: Go not installed in WSL; run `go test ./internal/middleware/...` manually
 
+- [x] **1.3** Rate Limiting (token bucket, 100 req/sec)
+  - Created mlrf-api/internal/middleware/ratelimit.go
+  - Token bucket algorithm using golang.org/x/time/rate
+  - Per-IP rate limiting with configurable RPS and burst
+  - Default: 100 req/sec, burst 200 (configurable via RATE_LIMIT_RPS/BURST env vars)
+  - Returns 429 Too Many Requests with Retry-After header
+  - Automatic cleanup of stale IP entries every 10 minutes
+  - Thread-safe with sync.RWMutex
+  - Supports X-Real-IP and X-Forwarded-For headers
+  - Added 12 unit tests in ratelimit_test.go
+  - Updated go.mod with golang.org/x/time v0.5.0 dependency
+  - Updated main.go with rate limiter middleware
+  - Updated docker-compose.yml with MLRF_RATE_LIMIT_RPS/BURST env vars
+  - Note: Go not installed in WSL; run `go test ./internal/middleware/...` manually
+
 ### Current Task
-- [ ] **1.3** Rate Limiting - NEXT UP
+- [ ] **1.4** Input Validation Enhancement - NEXT UP
