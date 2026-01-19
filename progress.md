@@ -402,7 +402,7 @@ NEXTSTEPS_COMPLETE
 ### Phase 3: Testing
 - [x] **3.1** React Component Unit Tests (Vitest)
 - [x] **3.2** API Load Tests (k6)
-- [ ] **3.3** Failure Scenario Tests
+- [x] **3.3** Failure Scenario Tests
 
 ### Phase 4: UX Features
 - [ ] **4.1** What-If Analysis
@@ -615,5 +615,23 @@ NEXTSTEPS_COMPLETE
   - All scripts follow k6 best practices with setup/teardown functions
   - Note: k6 not installed in WSL; run `k6 run predict.js` manually to verify
 
+- [x] **3.3** Failure Scenario Tests
+  - Created mlrf-api/internal/inference/interface.go with Inferencer interface
+  - Refactored Handlers to use Inferencer interface (enables mocking)
+  - Created MockInferencer in handlers_test.go (thread-safe with sync.Mutex)
+  - Test files created:
+    - TestPredictWithoutONNX: Verifies 503 response when ONNX unavailable (3 endpoints)
+    - TestPredictWithoutRedis: Verifies API works without Redis caching
+    - TestBatchPredictWithoutRedis: Verifies batch predictions work without cache
+    - TestPredictWithoutFeatureStore: Verifies zero-feature fallback works
+    - TestPredictSimpleWithAllDependencies: Happy path validation
+    - TestInferenceFailure: Verifies 500 response on inference errors
+    - TestBatchInferenceFailure: Verifies batch error handling
+    - TestConcurrentPredictions: 50 concurrent requests safety test
+  - Total: 10+ new failure scenario tests
+  - Note: Go not installed in WSL; run `go test ./internal/handlers/...` manually
+
+### Phase 3 Complete - Testing
+
 ### Current Task
-- [ ] **3.3** Failure Scenario Tests - NEXT UP
+- [ ] **4.1** What-If Analysis - NEXT UP

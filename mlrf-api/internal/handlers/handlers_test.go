@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 )
 
@@ -343,5 +344,371 @@ func TestPredictSimple_ResponseStructure(t *testing.T) {
 	// A full integration test with a mock model would verify the response structure
 	if w.Code != http.StatusServiceUnavailable {
 		t.Errorf("expected 503 without model, got %d", w.Code)
+	}
+}
+
+// ============================================================================
+// Failure Scenario Tests
+// ============================================================================
+
+// MockInferencer is a mock implementation of inference.Inferencer for testing.
+// Thread-safe for concurrent tests.
+type MockInferencer struct {
+	prediction float32
+	err        error
+	callCount  int32 // atomic counter
+	mu         sync.Mutex
+}
+
+func (m *MockInferencer) Predict(features []float32) (float32, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.callCount++
+	if m.err != nil {
+		return 0, m.err
+	}
+	return m.prediction, nil
+}
+
+func (m *MockInferencer) PredictBatch(featureBatch [][]float32) ([]float32, error) {
+	results := make([]float32, len(featureBatch))
+	for i := range featureBatch {
+		pred, err := m.Predict(featureBatch[i])
+		if err != nil {
+			return nil, err
+		}
+		results[i] = pred
+	}
+	return results, nil
+}
+
+func (m *MockInferencer) CallCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return int(m.callCount)
+}
+
+// TestPredictWithoutONNX verifies the API returns a proper error when ONNX model is unavailable.
+// This tests graceful degradation - the API should return 503 Service Unavailable, not crash.
+func TestPredictWithoutONNX(t *testing.T) {
+	h := NewHandlers(nil, nil, nil) // No ONNX model
+
+	testCases := []struct {
+		name     string
+		endpoint string
+		body     string
+	}{
+		{
+			name:     "/predict without ONNX",
+			endpoint: "/predict",
+			body:     `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}`,
+		},
+		{
+			name:     "/predict/simple without ONNX",
+			endpoint: "/predict/simple",
+			body:     `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":30}`,
+		},
+		{
+			name:     "/predict/batch without ONNX",
+			endpoint: "/predict/batch",
+			body:     `{"predictions":[{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}]}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, tc.endpoint, bytes.NewReader([]byte(tc.body)))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			// Route to correct handler
+			switch tc.endpoint {
+			case "/predict":
+				h.Predict(w, req)
+			case "/predict/simple":
+				h.PredictSimple(w, req)
+			case "/predict/batch":
+				h.PredictBatch(w, req)
+			}
+
+			// Should return 503 Service Unavailable, not crash
+			if w.Code != http.StatusServiceUnavailable {
+				t.Errorf("expected status 503, got %d", w.Code)
+			}
+
+			// Verify error response structure
+			var errResp ErrorResponse
+			if err := json.Unmarshal(w.Body.Bytes(), &errResp); err != nil {
+				t.Fatalf("failed to parse error response: %v", err)
+			}
+
+			if errResp.Code != CodeModelUnavailable {
+				t.Errorf("expected error code %s, got %s", CodeModelUnavailable, errResp.Code)
+			}
+
+			if errResp.Error == "" {
+				t.Error("expected non-empty error message")
+			}
+		})
+	}
+}
+
+// TestPredictWithoutRedis verifies the API works correctly when Redis cache is unavailable.
+// Predictions should succeed without caching.
+func TestPredictWithoutRedis(t *testing.T) {
+	mockOnnx := &MockInferencer{prediction: 1234.56}
+	h := NewHandlers(mockOnnx, nil, nil) // No Redis cache
+
+	t.Run("/predict works without Redis", func(t *testing.T) {
+		body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}`
+		req := httptest.NewRequest(http.MethodPost, "/predict", bytes.NewReader([]byte(body)))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		h.Predict(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var resp PredictResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("failed to parse response: %v", err)
+		}
+
+		if resp.Prediction != 1234.56 {
+			t.Errorf("expected prediction 1234.56, got %v", resp.Prediction)
+		}
+
+		if resp.Cached {
+			t.Error("expected Cached=false when Redis unavailable")
+		}
+	})
+
+	t.Run("/predict/simple works without Redis", func(t *testing.T) {
+		body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":30}`
+		req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		h.PredictSimple(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var resp PredictResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("failed to parse response: %v", err)
+		}
+
+		if resp.Prediction != 1234.56 {
+			t.Errorf("expected prediction 1234.56, got %v", resp.Prediction)
+		}
+
+		if resp.Cached {
+			t.Error("expected Cached=false when Redis unavailable")
+		}
+	})
+}
+
+// TestBatchPredictWithoutRedis verifies batch predictions work when Redis is unavailable.
+func TestBatchPredictWithoutRedis(t *testing.T) {
+	mockOnnx := &MockInferencer{prediction: 999.99}
+	h := NewHandlers(mockOnnx, nil, nil) // No Redis cache
+
+	body := `{"predictions":[
+		{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+		{"store_nbr":2,"family":"BEVERAGES","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+		{"store_nbr":3,"family":"PRODUCE","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
+	]}`
+	req := httptest.NewRequest(http.MethodPost, "/predict/batch", bytes.NewReader([]byte(body)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	h.PredictBatch(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp BatchPredictResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if len(resp.Predictions) != 3 {
+		t.Errorf("expected 3 predictions, got %d", len(resp.Predictions))
+	}
+
+	for i, pred := range resp.Predictions {
+		if pred.Prediction != 999.99 {
+			t.Errorf("prediction[%d]: expected 999.99, got %v", i, pred.Prediction)
+		}
+		if pred.Cached {
+			t.Errorf("prediction[%d]: expected Cached=false when Redis unavailable", i)
+		}
+	}
+}
+
+// TestPredictWithoutFeatureStore verifies the API uses zero features when feature store is unavailable.
+// This tests the /predict/simple endpoint which relies on the feature store.
+func TestPredictWithoutFeatureStore(t *testing.T) {
+	mockOnnx := &MockInferencer{prediction: 555.55}
+	h := NewHandlers(mockOnnx, nil, nil) // No feature store
+
+	body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":60}`
+	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	h.PredictSimple(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp PredictResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	// Prediction should succeed using zero features
+	if resp.Prediction != 555.55 {
+		t.Errorf("expected prediction 555.55, got %v", resp.Prediction)
+	}
+
+	// Verify model was called (meaning zero features were used as fallback)
+	if mockOnnx.CallCount() != 1 {
+		t.Errorf("expected model to be called once, got %d calls", mockOnnx.CallCount())
+	}
+}
+
+// TestPredictSimpleWithAllDependencies verifies the happy path with all dependencies available.
+func TestPredictSimpleWithAllDependencies(t *testing.T) {
+	mockOnnx := &MockInferencer{prediction: 2000.0}
+	// Note: We don't have a mock cache or feature store, so we test without them
+	h := NewHandlers(mockOnnx, nil, nil)
+
+	body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":90}`
+	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	h.PredictSimple(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp PredictResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	// Verify response structure
+	if resp.StoreNbr != 1 {
+		t.Errorf("expected store_nbr 1, got %d", resp.StoreNbr)
+	}
+	if resp.Family != "GROCERY I" {
+		t.Errorf("expected family 'GROCERY I', got '%s'", resp.Family)
+	}
+	if resp.Date != "2017-08-01" {
+		t.Errorf("expected date '2017-08-01', got '%s'", resp.Date)
+	}
+	if resp.Prediction != 2000.0 {
+		t.Errorf("expected prediction 2000.0, got %v", resp.Prediction)
+	}
+	if resp.LatencyMs <= 0 {
+		t.Error("expected positive latency")
+	}
+}
+
+// TestInferenceFailure verifies proper error handling when inference fails.
+func TestInferenceFailure(t *testing.T) {
+	mockOnnx := &MockInferencer{err: fmt.Errorf("simulated inference failure")}
+	h := NewHandlers(mockOnnx, nil, nil)
+
+	body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":30}`
+	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	h.PredictSimple(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d", w.Code)
+	}
+
+	var errResp ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to parse error response: %v", err)
+	}
+
+	if errResp.Code != CodeInferenceFailed {
+		t.Errorf("expected error code %s, got %s", CodeInferenceFailed, errResp.Code)
+	}
+}
+
+// TestBatchInferenceFailure verifies proper error handling when batch inference fails.
+func TestBatchInferenceFailure(t *testing.T) {
+	mockOnnx := &MockInferencer{err: fmt.Errorf("batch inference failure")}
+	h := NewHandlers(mockOnnx, nil, nil)
+
+	body := `{"predictions":[
+		{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
+	]}`
+	req := httptest.NewRequest(http.MethodPost, "/predict/batch", bytes.NewReader([]byte(body)))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	h.PredictBatch(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d", w.Code)
+	}
+
+	var errResp ErrorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &errResp); err != nil {
+		t.Fatalf("failed to parse error response: %v", err)
+	}
+
+	if errResp.Code != CodeInferenceFailed {
+		t.Errorf("expected error code %s, got %s", CodeInferenceFailed, errResp.Code)
+	}
+}
+
+// TestConcurrentPredictions verifies the API handles concurrent requests safely.
+func TestConcurrentPredictions(t *testing.T) {
+	mockOnnx := &MockInferencer{prediction: 42.0}
+	h := NewHandlers(mockOnnx, nil, nil)
+
+	numRequests := 50
+	done := make(chan bool, numRequests)
+
+	for i := 0; i < numRequests; i++ {
+		go func(reqNum int) {
+			body := fmt.Sprintf(`{"store_nbr":%d,"family":"GROCERY I","date":"2017-08-01","horizon":30}`, reqNum%54+1)
+			req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			h.PredictSimple(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Errorf("request %d: expected status 200, got %d", reqNum, w.Code)
+			}
+			done <- true
+		}(i)
+	}
+
+	// Wait for all requests to complete
+	for i := 0; i < numRequests; i++ {
+		<-done
+	}
+
+	// Verify all requests were processed (using thread-safe method)
+	if mockOnnx.CallCount() != numRequests {
+		t.Errorf("expected %d model calls, got %d", numRequests, mockOnnx.CallCount())
 	}
 }

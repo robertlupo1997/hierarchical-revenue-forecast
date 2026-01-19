@@ -13,15 +13,18 @@ import (
 
 // Handlers holds dependencies for HTTP handlers.
 type Handlers struct {
-	onnx         *inference.ONNXSession
+	onnx         inference.Inferencer
 	cache        *cache.RedisCache
 	featureStore *features.Store
 	intervals    *PredictionIntervals
 }
 
 // NewHandlers creates a new Handlers instance.
-// cache and featureStore can be nil if unavailable.
-func NewHandlers(onnx *inference.ONNXSession, c *cache.RedisCache, fs *features.Store) *Handlers {
+// Any dependency can be nil - handlers gracefully degrade when dependencies are unavailable.
+// - onnx: ONNX inference engine (nil returns 503 Service Unavailable)
+// - cache: Redis cache (nil = no caching, predictions still work)
+// - featureStore: Feature lookup (nil = uses zero features)
+func NewHandlers(onnx inference.Inferencer, c *cache.RedisCache, fs *features.Store) *Handlers {
 	return &Handlers{
 		onnx:         onnx,
 		cache:        c,
