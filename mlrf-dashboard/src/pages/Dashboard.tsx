@@ -19,6 +19,7 @@ import { HierarchyDrilldown } from '../components/HierarchyDrilldown';
 import { ModelComparison } from '../components/ModelComparison';
 import { ForecastChart, type ForecastDataPoint } from '../components/ForecastChart';
 import { HorizonSelect, type ForecastHorizon } from '../components/HorizonSelect';
+import { useForecastData } from '../hooks/useForecastData';
 import {
   fetchExplanation,
   fetchHierarchy,
@@ -222,6 +223,18 @@ export function Dashboard() {
     staleTime: 1000 * 60 * 10,
   });
 
+  // Fetch forecast data for selected store/family
+  const {
+    data: forecastData,
+    isLoading: forecastLoading,
+    refetch: refetchForecast,
+  } = useForecastData({
+    storeNbr: selectedStore,
+    family: selectedFamily,
+    startDate: selectedDate,
+    horizon,
+  });
+
   const handleNodeSelect = (node: HierarchyNode) => {
     // Extract store/family from bottom-level selection
     if (node.level === 'bottom' || node.level === 'family') {
@@ -239,14 +252,15 @@ export function Dashboard() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([refetchHierarchy(), refetchExplanation()]);
+    await Promise.all([refetchHierarchy(), refetchExplanation(), refetchForecast()]);
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
   // Use mock data if API fails
   const displayHierarchy = hierarchyData ?? mockHierarchy;
   const displayMetrics = metricsData ?? mockModels;
-  const isUsingMockData = !hierarchyData || !metricsData;
+  const displayForecast = forecastData && forecastData.length > 0 ? forecastData : mockForecastData;
+  const isUsingMockData = !hierarchyData || !metricsData || !forecastData || forecastData.length === 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -426,11 +440,15 @@ export function Dashboard() {
 
           {/* Forecast Chart */}
           <div className="card p-6 lg:col-span-2 animate-fade-in-up animation-delay-300">
-            <ForecastChart
-              data={mockForecastData}
-              title={`Revenue Forecast - Store ${selectedStore}, ${selectedFamily}`}
-              showConfidenceIntervals={true}
-            />
+            {forecastLoading ? (
+              <LoadingSkeleton className="h-64" />
+            ) : (
+              <ForecastChart
+                data={displayForecast}
+                title={`Revenue Forecast - Store ${selectedStore}, ${selectedFamily}`}
+                showConfidenceIntervals={true}
+              />
+            )}
           </div>
 
           {/* Hierarchy Drilldown */}

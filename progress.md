@@ -30,11 +30,18 @@ Last mode: DASHBOARD
   - Added min/max date constraints (2013-01-01 to 2017-08-15)
   - Matches Kaggle Store Sales dataset date range
   - Date changes already trigger refetch via React Query queryKey
+- [x] **1.4** Connect ForecastChart to real data
+  - Imported useForecastData hook into Dashboard.tsx
+  - Called hook with selectedStore, selectedFamily, selectedDate, horizon
+  - Added loading state skeleton for forecast chart
+  - Uses displayForecast with mockForecastData fallback when API fails
+  - Refresh button now also refetches forecast data
+  - Mock data warning shows when any data source (hierarchy, metrics, or forecast) is unavailable
 
-### Next Up
-- [ ] **1.4** Connect ForecastChart to real data (TypeScript)
+### Phase 1 Complete
+All Phase 1 tasks (Real Data Integration) are now complete.
 
-### Phase 2 (Future)
+### Next Up (Phase 2: Enhanced UX)
 - [ ] **2.0** API: Add trend fields to hierarchy response
 - [ ] **2.1** Calculate real trend badges
 - [ ] **2.2** Add store search/filter to HierarchyDrilldown
