@@ -406,7 +406,7 @@ NEXTSTEPS_COMPLETE
 
 ### Phase 4: UX Features
 - [x] **4.1** What-If Analysis
-- [ ] **4.2** Store Comparison Mode
+- [x] **4.2** Store Comparison Mode
 - [ ] **4.3** Mobile Responsive Design
 - [ ] **4.4** Batch Prediction CSV Upload
 
@@ -652,5 +652,41 @@ NEXTSTEPS_COMPLETE
   - ESLint: PASS
   - Build: PASS (35.92 KB CSS, ~850 KB JS)
 
+- [x] **4.2** Store Comparison Mode (commit 88397a9)
+  - Created ComparisonChart component (mlrf-dashboard/src/components/ComparisonChart.tsx)
+    - Dual forecast line visualization on single chart
+    - Summary statistics cards showing avg values, difference, and percentage
+    - Custom tooltip with side-by-side comparison and delta
+    - Color-coded trend badge (higher/lower/equal)
+    - Support for confidence interval bands (optional)
+  - Created Compare page (mlrf-dashboard/src/pages/Compare.tsx)
+    - Store A and Store B selection dropdowns (54 stores each)
+    - Product family picker for each store (33 families)
+    - Date picker and forecast horizon selector
+    - Swap stores button for quick reversal
+    - Mock data fallback when API unavailable
+    - Tips section with usage guidance
+    - Responsive layout for mobile/desktop
+  - Updated App.tsx to add /compare route
+  - Added Compare navigation link to Dashboard header
+  - TypeScript check: PASS
+  - ESLint: PASS (1 pre-existing warning)
+  - Build: PASS (36.77 KB CSS, ~870 KB JS)
+
+- [x] **4.3** Mobile Responsive Design (commit 0f03da3)
+  - Updated Dashboard.tsx with separate mobile and desktop header layouts
+  - Mobile header: stacked title row with theme toggle, horizontal scroll controls row
+  - Icon-only buttons on mobile for Compare and Refresh (saves space)
+  - Added xs breakpoint (475px) to tailwind.config.js for fine-grained mobile control
+  - Updated ForecastChart.tsx with responsive header layout (stacks on mobile)
+  - Updated AccuracyChart.tsx with responsive header and summary stats
+  - Updated HierarchyDrilldown.tsx with mobile-friendly summary section
+  - Updated Compare.tsx with responsive header matching Dashboard pattern
+  - Added mobile utilities to index.css: touch-manipulation, tap-target, safe-area-inset, etc.
+  - Charts reduce height on mobile (280px vs 320px)
+  - TypeScript check: PASS
+  - ESLint: PASS (1 pre-existing warning)
+  - Build: PASS (38.24 KB CSS, ~870 KB JS)
+
 ### Current Task
-- [ ] **4.2** Store Comparison Mode - NEXT UP
+- [ ] **4.4** Batch Prediction CSV Upload - NEXT UP

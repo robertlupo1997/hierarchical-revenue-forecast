@@ -306,14 +306,69 @@
   .animation-delay-200 {
     animation-delay: 200ms;
   }
+  .animation-delay-250 {
+    animation-delay: 250ms;
+  }
   .animation-delay-300 {
     animation-delay: 300ms;
+  }
+  .animation-delay-350 {
+    animation-delay: 350ms;
   }
   .animation-delay-400 {
     animation-delay: 400ms;
   }
   .animation-delay-500 {
     animation-delay: 500ms;
+  }
+
+  /* Mobile touch optimization */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Improved mobile tap targets (44px minimum per Apple/Google guidelines) */
+  .tap-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Safe area padding for notched devices */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Mobile card padding adjustments */
+  .card-mobile {
+    @apply p-4 sm:p-5 lg:p-6;
+  }
+
+  /* Prevent text selection on interactive elements (mobile) */
+  .select-none-mobile {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Responsive text that scales nicely on mobile */
+  .text-responsive {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+
+  /* Mobile-friendly horizontal scroll container */
+  .mobile-scroll {
+    @apply flex overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible;
+  }
+
+  /* Stack on mobile, row on larger screens */
+  .stack-mobile {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center;
   }
 
   /* Gradient borders */

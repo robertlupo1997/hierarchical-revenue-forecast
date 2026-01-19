@@ -357,7 +357,8 @@ export function Dashboard() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          {/* Desktop layout: single row */}
+          <div className="hidden md:flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
                 <TrendingUp className="h-5 w-5 text-white" />
@@ -426,11 +427,85 @@ export function Dashboard() {
             </div>
           </div>
 
+          {/* Mobile layout: stacked rows */}
+          <div className="md:hidden space-y-3">
+            {/* Title row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
+                  <TrendingUp className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                    MLRF Dashboard
+                  </h1>
+                  <p className="text-xs text-muted-foreground">
+                    {horizon}-day forecast
+                  </p>
+                </div>
+              </div>
+              <ThemeToggle />
+            </div>
+
+            {/* Controls row */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {/* Date selector */}
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 shrink-0">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min="2013-01-01"
+                  max="2017-08-15"
+                  className="bg-transparent text-sm focus:outline-none w-[110px]"
+                />
+              </div>
+
+              {/* Horizon selector */}
+              <div className="shrink-0">
+                <HorizonSelect value={horizon} onChange={setHorizon} />
+              </div>
+
+              {/* Compare link - icon only on mobile */}
+              <Link
+                to="/compare"
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg shrink-0',
+                  'bg-secondary text-secondary-foreground',
+                  'transition-all duration-200',
+                  'hover:bg-secondary/80'
+                )}
+                title="Compare stores"
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+              </Link>
+
+              {/* Refresh button - icon only on mobile */}
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg shrink-0',
+                  'bg-secondary text-secondary-foreground',
+                  'transition-all duration-200',
+                  'hover:bg-secondary/80',
+                  'disabled:opacity-50'
+                )}
+                title="Refresh data"
+              >
+                <RefreshCw
+                  className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
+                />
+              </button>
+            </div>
+          </div>
+
           {/* Mock data warning */}
           {isUsingMockData && (
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-warning/10 px-4 py-2.5 text-sm text-warning">
-              <AlertCircle className="h-4 w-4" />
-              <span>Using demo data. Connect the API server for live data.</span>
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-warning">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Using demo data. Connect API for live data.</span>
             </div>
           )}
         </div>

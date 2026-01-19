@@ -89,22 +89,22 @@ function SummaryStats({ summary }: { summary: AccuracySummary }) {
       : 'text-destructive';
 
   return (
-    <div className="flex flex-wrap gap-4 text-sm">
-      <div className="flex items-center gap-2">
-        <Target className="h-4 w-4 text-muted-foreground" />
-        <span className="text-muted-foreground">Correlation:</span>
+    <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+        <span className="text-muted-foreground">Corr:</span>
         <span className={cn('font-mono font-medium', correlationColor)}>
           {summary.correlation.toFixed(3)}
         </span>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">Mean MAPE:</span>
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <span className="text-muted-foreground">MAPE:</span>
         <span className="font-mono font-medium text-foreground">
           {summary.mean_mape.toFixed(2)}%
         </span>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">Data Points:</span>
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <span className="text-muted-foreground">Points:</span>
         <span className="font-mono font-medium text-foreground">
           {summary.data_points}
         </span>
@@ -141,18 +141,18 @@ export function AccuracyChart({ data, summary, title = 'Model Accuracy' }: Accur
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold tracking-tight text-foreground">
+          <h3 className="text-base sm:text-lg font-semibold tracking-tight text-foreground">
             {title}
           </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Predicted vs actual values on validation data
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            Predicted vs actual on validation data
           </p>
         </div>
         <div
           className={cn(
-            'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+            'flex items-center gap-1.5 rounded-full px-2 sm:px-2.5 py-1 text-xs font-medium w-fit shrink-0',
             trend === 'over' && 'bg-warning/10 text-warning',
             trend === 'under' && 'bg-primary/10 text-primary',
             trend === 'accurate' && 'bg-success/10 text-success'
@@ -161,12 +161,19 @@ export function AccuracyChart({ data, summary, title = 'Model Accuracy' }: Accur
           {trend === 'over' && <TrendingUp className="h-3 w-3" />}
           {trend === 'under' && <TrendingDown className="h-3 w-3" />}
           {trend === 'accurate' && <Target className="h-3 w-3" />}
-          <span>
+          <span className="hidden xs:inline">
             {trend === 'over'
               ? 'Tends to underpredict'
               : trend === 'under'
                 ? 'Tends to overpredict'
                 : 'Well calibrated'}
+          </span>
+          <span className="xs:hidden">
+            {trend === 'over'
+              ? 'Under'
+              : trend === 'under'
+                ? 'Over'
+                : 'Calibrated'}
           </span>
         </div>
       </div>
@@ -175,8 +182,8 @@ export function AccuracyChart({ data, summary, title = 'Model Accuracy' }: Accur
       <SummaryStats summary={summary} />
 
       {/* Chart */}
-      <div className="chart-container">
-        <ResponsiveContainer width="100%" height={320}>
+      <div className="chart-container -mx-2 sm:mx-0">
+        <ResponsiveContainer width="100%" height={280} className="sm:!h-[320px]">
           <ComposedChart
             data={dataWithError}
             margin={{ top: 20, right: 20, left: 0, bottom: 10 }}

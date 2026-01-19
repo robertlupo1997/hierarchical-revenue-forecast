@@ -107,22 +107,22 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
       </nav>
 
       {/* Current Level Summary */}
-      <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-5 shadow-card">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
+      <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4 sm:p-5 shadow-card">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex items-start gap-3 sm:gap-4">
             <div className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-xl border',
+              'flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl border shrink-0',
               config.color
             )}>
-              <LevelIcon className="h-6 w-6" />
+              <LevelIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
-            <div>
-              <h3 className="text-xl font-semibold tracking-tight text-foreground">
+            <div className="min-w-0">
+              <h3 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground truncate">
                 {currentNode.name}
               </h3>
               <span
                 className={cn(
-                  'mt-1.5 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium',
+                  'mt-1 sm:mt-1.5 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium',
                   config.color
                 )}
               >
@@ -130,11 +130,11 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
               </span>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold tracking-tight text-foreground font-mono">
+          <div className="text-left sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono">
               {formatCurrency(currentNode.prediction)}
             </div>
-            <div className="text-sm text-muted-foreground mt-0.5">Predicted Revenue</div>
+            <div className="text-xs sm:text-sm text-muted-foreground mt-0.5">Predicted Revenue</div>
             {currentNode.actual !== undefined && (
               <div className="mt-2 text-sm">
                 <span className="text-muted-foreground">Actual: </span>
@@ -149,7 +149,7 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
 
       {/* Store Search */}
       {showSearch && (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -158,7 +158,7 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
-                'w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm',
+                'w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2 sm:py-2.5 text-sm',
                 'placeholder:text-muted-foreground/70',
                 'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
                 'transition-all duration-200'
@@ -167,13 +167,13 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors touch-manipulation"
               >
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
             )}
           </div>
-          <div className="text-sm text-muted-foreground whitespace-nowrap">
+          <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
             {searchQuery ? (
               <span>
                 {filteredChildren.length} of {currentNode.children?.length ?? 0} stores
@@ -187,7 +187,7 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
 
       {/* Children Grid */}
       {filteredChildren.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredChildren.map((child, index) => {
             const childConfig = levelConfig[child.level] || levelConfig.total;
             const ChildIcon = childConfig.icon;

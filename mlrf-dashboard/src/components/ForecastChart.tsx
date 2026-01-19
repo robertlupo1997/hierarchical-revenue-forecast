@@ -222,18 +222,18 @@ export function ForecastChart({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           {title && (
-            <h3 className="text-lg font-semibold tracking-tight text-foreground">
+            <h3 className="text-base sm:text-lg font-semibold tracking-tight text-foreground truncate">
               {title}
             </h3>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <div
             className={cn(
-              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+              'flex items-center gap-1.5 rounded-full px-2 sm:px-2.5 py-1 text-xs font-medium',
               stats.trend === 'up' && 'bg-success/10 text-success',
               stats.trend === 'down' && 'bg-destructive/10 text-destructive',
               stats.trend === 'stable' && 'bg-muted text-muted-foreground'
@@ -255,8 +255,8 @@ export function ForecastChart({
       </div>
 
       {/* Chart */}
-      <div className="chart-container">
-        <ResponsiveContainer width="100%" height={320}>
+      <div className="chart-container -mx-2 sm:mx-0">
+        <ResponsiveContainer width="100%" height={280} className="sm:!h-[320px]">
           <ComposedChart
             data={data}
             margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
