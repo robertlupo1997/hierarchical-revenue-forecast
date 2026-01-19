@@ -405,7 +405,7 @@ NEXTSTEPS_COMPLETE
 - [x] **3.3** Failure Scenario Tests
 
 ### Phase 4: UX Features
-- [ ] **4.1** What-If Analysis
+- [x] **4.1** What-If Analysis
 - [ ] **4.2** Store Comparison Mode
 - [ ] **4.3** Mobile Responsive Design
 - [ ] **4.4** Batch Prediction CSV Upload
@@ -633,5 +633,24 @@ NEXTSTEPS_COMPLETE
 
 ### Phase 3 Complete - Testing
 
+### Completed Tasks
+- [x] **4.1** What-If Analysis
+  - Created mlrf-api/internal/handlers/whatif.go with POST /whatif endpoint
+  - Endpoint accepts base prediction context and feature adjustments
+  - Computes baseline and adjusted predictions, returns delta and delta_pct
+  - Supports 17 adjustable features: oil_price, onpromotion, day_of_week, etc.
+  - Uses multiplier logic for continuous features, direct set for binary/bounded
+  - Added WhatIfRequest/WhatIfResponse types to dashboard API client
+  - Created WhatIfAnalysis React component with interactive sliders:
+    - Oil Price: slider from -50% to +100% (multiplier)
+    - Promotion: Yes/No toggle button
+    - Day of Week: 7-day button selector
+  - Real-time "Analyze Impact" button shows baseline vs adjusted prediction
+  - Results display delta in currency and percentage format
+  - Integrated into Dashboard.tsx spanning full width below Model Comparison
+  - TypeScript check: PASS
+  - ESLint: PASS
+  - Build: PASS (35.92 KB CSS, ~850 KB JS)
+
 ### Current Task
-- [ ] **4.1** What-If Analysis - NEXT UP
+- [ ] **4.2** Store Comparison Mode - NEXT UP

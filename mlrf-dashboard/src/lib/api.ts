@@ -96,6 +96,23 @@ export interface AccuracyResponse {
   summary: AccuracySummary;
 }
 
+export interface WhatIfRequest {
+  store_nbr: number;
+  family: string;
+  date: string;
+  horizon: number;
+  adjustments: Record<string, number>;
+}
+
+export interface WhatIfResponse {
+  original: number;
+  adjusted: number;
+  delta: number;
+  delta_pct: number;
+  latency_ms: number;
+  applied: Record<string, number>;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -182,6 +199,13 @@ class ApiClient {
   async getAccuracy(): Promise<AccuracyResponse> {
     return this.fetch<AccuracyResponse>('/accuracy');
   }
+
+  async whatIf(request: WhatIfRequest): Promise<WhatIfResponse> {
+    return this.fetch<WhatIfResponse>('/whatif', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
@@ -223,4 +247,20 @@ export async function fetchSimplePrediction(
 
 export async function fetchAccuracy(): Promise<AccuracyResponse> {
   return apiClient.getAccuracy();
+}
+
+export async function fetchWhatIf(
+  storeNbr: number,
+  family: string,
+  date: string,
+  horizon: number,
+  adjustments: Record<string, number>
+): Promise<WhatIfResponse> {
+  return apiClient.whatIf({
+    store_nbr: storeNbr,
+    family,
+    date,
+    horizon,
+    adjustments,
+  });
 }

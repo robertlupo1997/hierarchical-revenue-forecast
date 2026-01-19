@@ -19,6 +19,7 @@ import { HierarchyDrilldown } from '../components/HierarchyDrilldown';
 import { ModelComparison } from '../components/ModelComparison';
 import { ForecastChart, type ForecastDataPoint } from '../components/ForecastChart';
 import { AccuracyChart } from '../components/AccuracyChart';
+import { WhatIfAnalysis } from '../components/WhatIfAnalysis';
 import { HorizonSelect, type ForecastHorizon } from '../components/HorizonSelect';
 import { useForecastData } from '../hooks/useForecastData';
 import {
@@ -517,6 +518,16 @@ export function Dashboard() {
             ) : (
               <ModelComparison data={displayMetrics} />
             )}
+          </div>
+
+          {/* What-If Analysis */}
+          <div className="card p-6 lg:col-span-2 animate-fade-in-up animation-delay-250">
+            <WhatIfAnalysis
+              storeNbr={selectedStore}
+              family={selectedFamily}
+              date={selectedDate}
+              horizon={horizon}
+            />
           </div>
 
           {/* Forecast Chart */}

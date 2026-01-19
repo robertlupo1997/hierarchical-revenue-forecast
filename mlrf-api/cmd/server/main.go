@@ -169,6 +169,7 @@ func main() {
 	r.Get("/metrics", h.Metrics)
 	r.Get("/model-metrics", h.ModelMetrics)
 	r.Get("/accuracy", h.Accuracy)
+	r.Post("/whatif", h.WhatIf)
 	r.Handle("/metrics/prometheus", promhttp.Handler())
 
 	// Start server
