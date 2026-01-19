@@ -1,0 +1,1068 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]:
+            - img [ref=e12]
+            - generic [ref=e15]:
+              - heading "Multi-LOB Revenue Forecasting" [level=1] [ref=e16]
+              - paragraph [ref=e17]: 90-day hierarchical forecast with SHAP explainability
+          - generic [ref=e18]:
+            - generic [ref=e19]:
+              - img [ref=e20]
+              - textbox [ref=e22]: 2017-08-01
+            - generic [ref=e23]:
+              - img [ref=e24]
+              - combobox "Forecast horizon" [ref=e26] [cursor=pointer]:
+                - option "15 days"
+                - option "30 days"
+                - option "60 days"
+                - option "90 days" [selected]
+            - link "Compare" [ref=e27] [cursor=pointer]:
+              - /url: /compare
+              - img [ref=e28]
+              - generic [ref=e31]: Compare
+            - link "Batch" [ref=e32] [cursor=pointer]:
+              - /url: /batch
+              - img [ref=e33]
+              - generic [ref=e36]: Batch
+            - button "Refresh" [ref=e37] [cursor=pointer]:
+              - img [ref=e38]
+              - generic [ref=e43]: Refresh
+            - button "Switch to light mode" [ref=e44] [cursor=pointer]:
+              - img
+              - img [ref=e45]
+        - generic [ref=e47]:
+          - img [ref=e48]
+          - generic [ref=e50]: Using demo data. Connect API for live data.
+    - main [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - img [ref=e56]
+          - generic [ref=e59]:
+            - paragraph [ref=e60]: Total Forecast
+            - paragraph [ref=e61]: $1042.23M
+            - paragraph [ref=e62]: 90-day projection
+        - generic [ref=e63]:
+          - img [ref=e66]
+          - generic [ref=e68]:
+            - paragraph [ref=e69]: Active Stores
+            - paragraph [ref=e70]: "54"
+            - paragraph [ref=e71]: Across all regions
+        - generic [ref=e72]:
+          - img [ref=e75]
+          - generic [ref=e79]:
+            - paragraph [ref=e80]: Product Families
+            - paragraph [ref=e81]: "33"
+            - paragraph [ref=e82]: Hierarchical categories
+        - generic [ref=e83]:
+          - img [ref=e86]
+          - generic [ref=e88]:
+            - paragraph [ref=e89]: Model Accuracy
+            - paragraph [ref=e90]: "0.48"
+            - paragraph [ref=e91]: RMSLE (lower is better)
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - generic [ref=e95]:
+              - heading "Forecast Explanation" [level=2] [ref=e96]
+              - paragraph [ref=e97]: Store 1 · GROCERY I
+            - link "Details" [ref=e98] [cursor=pointer]:
+              - /url: /explain/1/GROCERY%20I
+              - text: Details
+              - img [ref=e99]
+          - generic [ref=e103]:
+            - img [ref=e104]:
+              - generic [ref=e105]:
+                - generic [ref=e116]:
+                  - img [ref=e118]:
+                    - generic [ref=e119]: Base Value
+                  - img [ref=e121]:
+                    - generic [ref=e122]: sales_lag_7
+                  - img [ref=e124]:
+                    - generic [ref=e125]: oil_price
+                  - img [ref=e127]:
+                    - generic [ref=e128]: is_holiday
+                  - img [ref=e130]:
+                    - generic [ref=e131]: dayofweek
+                  - img [ref=e133]:
+                    - generic [ref=e134]: sales_rolling_mean_7
+                  - img [ref=e136]:
+                    - generic [ref=e137]: promo_rolling_7
+                  - img [ref=e139]:
+                    - generic [ref=e140]: cluster
+                  - img [ref=e142]:
+                    - generic [ref=e143]: month
+                  - img [ref=e145]:
+                    - generic [ref=e146]: Prediction
+                - generic [ref=e147]:
+                  - img [ref=e149]:
+                    - generic [ref=e150]: "-200"
+                  - img [ref=e152]:
+                    - generic [ref=e153]: "0"
+                  - img [ref=e155]:
+                    - generic [ref=e156]: "200"
+                  - img [ref=e158]:
+                    - generic [ref=e159]: "400"
+                  - img [ref=e161]:
+                    - generic [ref=e162]: "600"
+                  - img [ref=e164]:
+                    - generic [ref=e165]: "800"
+                  - img [ref=e167]:
+                    - generic [ref=e168]: 1.0k
+                  - img [ref=e170]:
+                    - generic [ref=e171]: 1.2k
+                  - img [ref=e173]:
+                    - generic [ref=e174]: 1.4k
+                  - img [ref=e176]:
+                    - generic [ref=e177]: 1.6k
+                  - img [ref=e179]:
+                    - generic [ref=e180]: 1.8k
+            - generic [ref=e181]:
+              - generic [ref=e182]:
+                - img [ref=e184]
+                - generic [ref=e186]: Base
+              - generic [ref=e187]:
+                - img [ref=e189]
+                - generic [ref=e191]: Increases prediction
+              - generic [ref=e192]:
+                - img [ref=e194]
+                - generic [ref=e196]: Decreases prediction
+              - generic [ref=e197]:
+                - img [ref=e199]
+                - generic [ref=e203]: Final
+        - generic [ref=e205]:
+          - generic [ref=e206]:
+            - generic [ref=e207]:
+              - heading "Model Performance" [level=3] [ref=e208]
+              - paragraph [ref=e209]: Root Mean Squared Logarithmic Error (lower is better)
+            - generic [ref=e210]:
+              - combobox [ref=e211] [cursor=pointer]:
+                - option "RMSLE" [selected]
+                - option "MAPE"
+                - option "RMSE"
+              - img
+          - img [ref=e215]:
+            - generic [ref=e219]:
+              - generic [ref=e221]: "0.000"
+              - generic [ref=e223]: "0.200"
+              - generic [ref=e225]: "0.400"
+              - generic [ref=e227]: "0.600"
+              - generic [ref=e229]: "0.800"
+            - generic [ref=e231]:
+              - generic [ref=e233]: LightGBM +MinTrace
+              - generic [ref=e235]: AutoARIMA+ BottomUp
+              - generic [ref=e237]: ETS +TopDown
+              - generic [ref=e239]: SeasonalNaive
+          - generic [ref=e251]:
+            - img [ref=e253]
+            - generic [ref=e256]:
+              - generic [ref=e257]:
+                - text: Best Model
+                - generic [ref=e258]: LightGBM + MinTrace
+              - generic [ref=e259]:
+                - text: "RMSLE: 0.4770"
+                - generic [ref=e260]:
+                  - img [ref=e261]
+                  - text: 26.9% better than worst
+          - table [ref=e265]:
+            - rowgroup [ref=e266]:
+              - row "Model RMSLE MAPE RMSE" [ref=e267]:
+                - columnheader "Model" [ref=e268]
+                - columnheader "RMSLE" [ref=e269]
+                - columnheader "MAPE" [ref=e270]
+                - columnheader "RMSE" [ref=e271]
+            - rowgroup [ref=e272]:
+              - row "LightGBM + MinTrace 0.4770 0.1500 214.5800" [ref=e273]:
+                - cell "LightGBM + MinTrace" [ref=e274]:
+                  - generic [ref=e275]:
+                    - text: LightGBM + MinTrace
+                    - img [ref=e277]
+                - cell "0.4770" [ref=e280]
+                - cell "0.1500" [ref=e281]
+                - cell "214.5800" [ref=e282]
+              - row "AutoARIMA + BottomUp 0.5200 0.1900 245.0000" [ref=e283]:
+                - cell "AutoARIMA + BottomUp" [ref=e284]:
+                  - generic [ref=e285]: AutoARIMA + BottomUp
+                - cell "0.5200" [ref=e286]
+                - cell "0.1900" [ref=e287]
+                - cell "245.0000" [ref=e288]
+              - row "ETS + TopDown 0.5800 0.2200 280.0000" [ref=e289]:
+                - cell "ETS + TopDown" [ref=e290]:
+                  - generic [ref=e291]: ETS + TopDown
+                - cell "0.5800" [ref=e292]
+                - cell "0.2200" [ref=e293]
+                - cell "280.0000" [ref=e294]
+              - row "SeasonalNaive 0.6521 0.2800 320.0000" [ref=e295]:
+                - cell "SeasonalNaive" [ref=e296]:
+                  - generic [ref=e297]: SeasonalNaive
+                - cell "0.6521" [ref=e298]
+                - cell "0.2800" [ref=e299]
+                - cell "320.0000" [ref=e300]
+        - generic [ref=e302]:
+          - generic [ref=e303]:
+            - generic [ref=e304]:
+              - heading "What-If Analysis" [level=2] [ref=e305]
+              - paragraph [ref=e306]: Explore how changes affect predictions
+            - button "Reset" [disabled]:
+              - img
+              - text: Reset
+          - generic [ref=e307]:
+            - generic [ref=e308]:
+              - generic [ref=e309]:
+                - generic [ref=e310]:
+                  - img [ref=e312]
+                  - generic [ref=e315]: Oil Price
+                - generic [ref=e316]: 0%
+              - generic [ref=e317]:
+                - slider [ref=e318] [cursor=pointer]: "1"
+                - generic [ref=e319]:
+                  - generic [ref=e320]: "-50%"
+                  - generic [ref=e321]: 100%
+            - generic [ref=e322]:
+              - generic [ref=e323]:
+                - generic [ref=e324]:
+                  - img [ref=e326]
+                  - generic [ref=e329]: Promotion
+                - generic [ref=e330]: "No"
+              - generic [ref=e331]:
+                - button "No" [ref=e332] [cursor=pointer]
+                - button "Yes" [ref=e333] [cursor=pointer]
+            - generic [ref=e334]:
+              - generic [ref=e335]:
+                - generic [ref=e336]:
+                  - img [ref=e338]
+                  - generic [ref=e340]: Day of Week
+                - generic [ref=e341]: Wed
+              - generic [ref=e342]:
+                - button "S" [ref=e343] [cursor=pointer]
+                - button "M" [ref=e344] [cursor=pointer]
+                - button "T" [ref=e345] [cursor=pointer]
+                - button "W" [ref=e346] [cursor=pointer]
+                - button "T" [ref=e347] [cursor=pointer]
+                - button "F" [ref=e348] [cursor=pointer]
+                - button "S" [ref=e349] [cursor=pointer]
+          - button "Analyze Impact" [ref=e350] [cursor=pointer]
+        - generic [ref=e352]:
+          - generic [ref=e353]:
+            - heading "Revenue Forecast - Store 1, GROCERY I" [level=3] [ref=e355]
+            - generic [ref=e356]:
+              - generic [ref=e357]:
+                - img [ref=e358]
+                - generic [ref=e361]: 100.0% down
+              - button "Export" [ref=e363] [cursor=pointer]:
+                - img [ref=e364]
+                - generic [ref=e367]: Export
+                - img [ref=e368]
+          - img [ref=e373]:
+            - generic [ref=e377]:
+              - generic [ref=e379]: Jul 2
+              - generic [ref=e381]: Jul 9
+              - generic [ref=e383]: Jul 16
+              - generic [ref=e385]: Jul 23
+            - generic [ref=e387]:
+              - generic [ref=e389]: $0k
+              - generic [ref=e391]: $15k
+              - generic [ref=e393]: $30k
+              - generic [ref=e395]: $45k
+              - generic [ref=e397]: $60k
+          - generic [ref=e400]:
+            - generic [ref=e403]: Historical
+            - generic [ref=e406]: Forecast
+            - generic [ref=e409]: 80% CI
+            - generic [ref=e412]: 95% CI
+        - generic [ref=e414]:
+          - generic [ref=e415]:
+            - generic [ref=e416]:
+              - heading "Model Accuracy" [level=3] [ref=e417]
+              - paragraph [ref=e418]: Predicted vs actual on validation data
+            - generic [ref=e419]:
+              - img [ref=e420]
+              - generic [ref=e423]: Tends to underpredict
+          - generic [ref=e424]:
+            - generic [ref=e425]:
+              - img [ref=e426]
+              - generic [ref=e430]: "Corr:"
+              - generic [ref=e431]: "0.950"
+            - generic [ref=e432]:
+              - generic [ref=e433]: "MAPE:"
+              - generic [ref=e434]: 1.24%
+            - generic [ref=e435]:
+              - generic [ref=e436]: "Points:"
+              - generic [ref=e437]: "15"
+          - generic [ref=e440]:
+            - img [ref=e441]:
+              - generic [ref=e445]:
+                - generic [ref=e447]: Jun 30
+                - generic [ref=e449]: Jul 1
+                - generic [ref=e451]: Jul 2
+                - generic [ref=e453]: Jul 3
+                - generic [ref=e455]: Jul 4
+                - generic [ref=e457]: Jul 5
+                - generic [ref=e459]: Jul 6
+                - generic [ref=e461]: Jul 7
+                - generic [ref=e463]: Jul 8
+                - generic [ref=e465]: Jul 9
+                - generic [ref=e467]: Jul 10
+                - generic [ref=e469]: Jul 11
+                - generic [ref=e471]: Jul 12
+                - generic [ref=e473]: Jul 13
+                - generic [ref=e475]: Jul 14
+              - generic [ref=e477]:
+                - generic [ref=e479]: $-350k
+                - generic [ref=e481]: $0k
+                - generic [ref=e483]: $350k
+                - generic [ref=e485]: $700k
+                - generic [ref=e487]: $1050k
+            - list [ref=e498]:
+              - listitem [ref=e499]:
+                - img [ref=e500]
+                - generic [ref=e502]: Error
+              - listitem [ref=e503]:
+                - img [ref=e504]
+                - generic [ref=e506]: Actual
+              - listitem [ref=e507]:
+                - img [ref=e508]
+                - generic [ref=e510]: Predicted
+          - generic [ref=e511]:
+            - generic [ref=e514]: Actual
+            - generic [ref=e517]: Predicted
+            - generic [ref=e520]: Error Band
+        - generic [ref=e521]:
+          - generic [ref=e523]:
+            - heading "Revenue by Hierarchy" [level=2] [ref=e524]
+            - paragraph [ref=e525]: Drill down through stores and product families
+          - generic [ref=e526]:
+            - navigation [ref=e527]:
+              - button "Total" [ref=e529] [cursor=pointer]:
+                - generic [ref=e530]:
+                  - img [ref=e531]
+                  - text: Total
+            - generic [ref=e535]:
+              - generic [ref=e536]:
+                - img [ref=e538]
+                - generic [ref=e542]:
+                  - heading "Total" [level=3] [ref=e543]
+                  - generic [ref=e544]: Total
+              - generic [ref=e545]:
+                - generic [ref=e546]: $1,042,229,871
+                - generic [ref=e547]: Predicted Revenue
+            - generic [ref=e548]:
+              - generic [ref=e549]:
+                - img [ref=e550]
+                - textbox "Search stores..." [ref=e553]
+              - generic [ref=e555]: 54 stores
+            - generic [ref=e556]:
+              - button "0.0% Store 1 Store $257,967 0.0% 33 items" [ref=e557] [cursor=pointer]:
+                - generic [ref=e559]: 0.0%
+                - generic [ref=e560]:
+                  - img [ref=e562]
+                  - generic [ref=e567]:
+                    - generic [ref=e568]: Store 1
+                    - generic [ref=e569]: Store
+                - generic [ref=e570]:
+                  - generic [ref=e571]: $257,967
+                  - generic [ref=e572]: 0.0%
+                - generic [ref=e573]:
+                  - generic [ref=e574]: 33 items
+                  - img [ref=e575]
+              - button "0.0% Store 2 Store $393,623 0.0% 33 items" [ref=e577] [cursor=pointer]:
+                - generic [ref=e579]: 0.0%
+                - generic [ref=e580]:
+                  - img [ref=e582]
+                  - generic [ref=e587]:
+                    - generic [ref=e588]: Store 2
+                    - generic [ref=e589]: Store
+                - generic [ref=e590]:
+                  - generic [ref=e591]: $393,623
+                  - generic [ref=e592]: 0.0%
+                - generic [ref=e593]:
+                  - generic [ref=e594]: 33 items
+                  - img [ref=e595]
+              - button "0.1% Store 3 Store $922,661 0.1% 33 items" [ref=e597] [cursor=pointer]:
+                - generic [ref=e599]: 0.1%
+                - generic [ref=e600]:
+                  - img [ref=e602]
+                  - generic [ref=e607]:
+                    - generic [ref=e608]: Store 3
+                    - generic [ref=e609]: Store
+                - generic [ref=e610]:
+                  - generic [ref=e611]: $922,661
+                  - generic [ref=e612]: 0.1%
+                - generic [ref=e613]:
+                  - generic [ref=e614]: 33 items
+                  - img [ref=e615]
+              - button "0.0% Store 4 Store $344,307 0.0% 33 items" [ref=e617] [cursor=pointer]:
+                - generic [ref=e619]: 0.0%
+                - generic [ref=e620]:
+                  - img [ref=e622]
+                  - generic [ref=e627]:
+                    - generic [ref=e628]: Store 4
+                    - generic [ref=e629]: Store
+                - generic [ref=e630]:
+                  - generic [ref=e631]: $344,307
+                  - generic [ref=e632]: 0.0%
+                - generic [ref=e633]:
+                  - generic [ref=e634]: 33 items
+                  - img [ref=e635]
+              - button "0.0% Store 5 Store $282,019 0.0% 33 items" [ref=e637] [cursor=pointer]:
+                - generic [ref=e639]: 0.0%
+                - generic [ref=e640]:
+                  - img [ref=e642]
+                  - generic [ref=e647]:
+                    - generic [ref=e648]: Store 5
+                    - generic [ref=e649]: Store
+                - generic [ref=e650]:
+                  - generic [ref=e651]: $282,019
+                  - generic [ref=e652]: 0.0%
+                - generic [ref=e653]:
+                  - generic [ref=e654]: 33 items
+                  - img [ref=e655]
+              - button "0.0% Store 6 Store $458,628 0.0% 33 items" [ref=e657] [cursor=pointer]:
+                - generic [ref=e659]: 0.0%
+                - generic [ref=e660]:
+                  - img [ref=e662]
+                  - generic [ref=e667]:
+                    - generic [ref=e668]: Store 6
+                    - generic [ref=e669]: Store
+                - generic [ref=e670]:
+                  - generic [ref=e671]: $458,628
+                  - generic [ref=e672]: 0.0%
+                - generic [ref=e673]:
+                  - generic [ref=e674]: 33 items
+                  - img [ref=e675]
+              - button "0.0% Store 7 Store $493,581 0.0% 33 items" [ref=e677] [cursor=pointer]:
+                - generic [ref=e679]: 0.0%
+                - generic [ref=e680]:
+                  - img [ref=e682]
+                  - generic [ref=e687]:
+                    - generic [ref=e688]: Store 7
+                    - generic [ref=e689]: Store
+                - generic [ref=e690]:
+                  - generic [ref=e691]: $493,581
+                  - generic [ref=e692]: 0.0%
+                - generic [ref=e693]:
+                  - generic [ref=e694]: 33 items
+                  - img [ref=e695]
+              - button "0.1% Store 8 Store $556,599 0.1% 33 items" [ref=e697] [cursor=pointer]:
+                - generic [ref=e699]: 0.1%
+                - generic [ref=e700]:
+                  - img [ref=e702]
+                  - generic [ref=e707]:
+                    - generic [ref=e708]: Store 8
+                    - generic [ref=e709]: Store
+                - generic [ref=e710]:
+                  - generic [ref=e711]: $556,599
+                  - generic [ref=e712]: 0.1%
+                - generic [ref=e713]:
+                  - generic [ref=e714]: 33 items
+                  - img [ref=e715]
+              - button "0.0% Store 9 Store $480,447 0.0% 33 items" [ref=e717] [cursor=pointer]:
+                - generic [ref=e719]: 0.0%
+                - generic [ref=e720]:
+                  - img [ref=e722]
+                  - generic [ref=e727]:
+                    - generic [ref=e728]: Store 9
+                    - generic [ref=e729]: Store
+                - generic [ref=e730]:
+                  - generic [ref=e731]: $480,447
+                  - generic [ref=e732]: 0.0%
+                - generic [ref=e733]:
+                  - generic [ref=e734]: 33 items
+                  - img [ref=e735]
+              - button "0.0% Store 10 Store $174,186 0.0% 33 items" [ref=e737] [cursor=pointer]:
+                - generic [ref=e739]: 0.0%
+                - generic [ref=e740]:
+                  - img [ref=e742]
+                  - generic [ref=e747]:
+                    - generic [ref=e748]: Store 10
+                    - generic [ref=e749]: Store
+                - generic [ref=e750]:
+                  - generic [ref=e751]: $174,186
+                  - generic [ref=e752]: 0.0%
+                - generic [ref=e753]:
+                  - generic [ref=e754]: 33 items
+                  - img [ref=e755]
+              - button "0.0% Store 11 Store $514,303 0.0% 33 items" [ref=e757] [cursor=pointer]:
+                - generic [ref=e759]: 0.0%
+                - generic [ref=e760]:
+                  - img [ref=e762]
+                  - generic [ref=e767]:
+                    - generic [ref=e768]: Store 11
+                    - generic [ref=e769]: Store
+                - generic [ref=e770]:
+                  - generic [ref=e771]: $514,303
+                  - generic [ref=e772]: 0.0%
+                - generic [ref=e773]:
+                  - generic [ref=e774]: 33 items
+                  - img [ref=e775]
+              - button "0.0% Store 12 Store $193,461 0.0% 33 items" [ref=e777] [cursor=pointer]:
+                - generic [ref=e779]: 0.0%
+                - generic [ref=e780]:
+                  - img [ref=e782]
+                  - generic [ref=e787]:
+                    - generic [ref=e788]: Store 12
+                    - generic [ref=e789]: Store
+                - generic [ref=e790]:
+                  - generic [ref=e791]: $193,461
+                  - generic [ref=e792]: 0.0%
+                - generic [ref=e793]:
+                  - generic [ref=e794]: 33 items
+                  - img [ref=e795]
+              - button "0.0% Store 13 Store $191,227 0.0% 33 items" [ref=e797] [cursor=pointer]:
+                - generic [ref=e799]: 0.0%
+                - generic [ref=e800]:
+                  - img [ref=e802]
+                  - generic [ref=e807]:
+                    - generic [ref=e808]: Store 13
+                    - generic [ref=e809]: Store
+                - generic [ref=e810]:
+                  - generic [ref=e811]: $191,227
+                  - generic [ref=e812]: 0.0%
+                - generic [ref=e813]:
+                  - generic [ref=e814]: 33 items
+                  - img [ref=e815]
+              - button "0.0% Store 14 Store $205,554 0.0% 33 items" [ref=e817] [cursor=pointer]:
+                - generic [ref=e819]: 0.0%
+                - generic [ref=e820]:
+                  - img [ref=e822]
+                  - generic [ref=e827]:
+                    - generic [ref=e828]: Store 14
+                    - generic [ref=e829]: Store
+                - generic [ref=e830]:
+                  - generic [ref=e831]: $205,554
+                  - generic [ref=e832]: 0.0%
+                - generic [ref=e833]:
+                  - generic [ref=e834]: 33 items
+                  - img [ref=e835]
+              - button "0.0% Store 15 Store $208,201 0.0% 33 items" [ref=e837] [cursor=pointer]:
+                - generic [ref=e839]: 0.0%
+                - generic [ref=e840]:
+                  - img [ref=e842]
+                  - generic [ref=e847]:
+                    - generic [ref=e848]: Store 15
+                    - generic [ref=e849]: Store
+                - generic [ref=e850]:
+                  - generic [ref=e851]: $208,201
+                  - generic [ref=e852]: 0.0%
+                - generic [ref=e853]:
+                  - generic [ref=e854]: 33 items
+                  - img [ref=e855]
+              - button "0.0% Store 16 Store $198,940 0.0% 33 items" [ref=e857] [cursor=pointer]:
+                - generic [ref=e859]: 0.0%
+                - generic [ref=e860]:
+                  - img [ref=e862]
+                  - generic [ref=e867]:
+                    - generic [ref=e868]: Store 16
+                    - generic [ref=e869]: Store
+                - generic [ref=e870]:
+                  - generic [ref=e871]: $198,940
+                  - generic [ref=e872]: 0.0%
+                - generic [ref=e873]:
+                  - generic [ref=e874]: 33 items
+                  - img [ref=e875]
+              - button "0.0% Store 17 Store $329,612 0.0% 33 items" [ref=e877] [cursor=pointer]:
+                - generic [ref=e879]: 0.0%
+                - generic [ref=e880]:
+                  - img [ref=e882]
+                  - generic [ref=e887]:
+                    - generic [ref=e888]: Store 17
+                    - generic [ref=e889]: Store
+                - generic [ref=e890]:
+                  - generic [ref=e891]: $329,612
+                  - generic [ref=e892]: 0.0%
+                - generic [ref=e893]:
+                  - generic [ref=e894]: 33 items
+                  - img [ref=e895]
+              - button "0.0% Store 18 Store $241,309 0.0% 33 items" [ref=e897] [cursor=pointer]:
+                - generic [ref=e899]: 0.0%
+                - generic [ref=e900]:
+                  - img [ref=e902]
+                  - generic [ref=e907]:
+                    - generic [ref=e908]: Store 18
+                    - generic [ref=e909]: Store
+                - generic [ref=e910]:
+                  - generic [ref=e911]: $241,309
+                  - generic [ref=e912]: 0.0%
+                - generic [ref=e913]:
+                  - generic [ref=e914]: 33 items
+                  - img [ref=e915]
+              - button "0.0% Store 19 Store $238,190 0.0% 33 items" [ref=e917] [cursor=pointer]:
+                - generic [ref=e919]: 0.0%
+                - generic [ref=e920]:
+                  - img [ref=e922]
+                  - generic [ref=e927]:
+                    - generic [ref=e928]: Store 19
+                    - generic [ref=e929]: Store
+                - generic [ref=e930]:
+                  - generic [ref=e931]: $238,190
+                  - generic [ref=e932]: 0.0%
+                - generic [ref=e933]:
+                  - generic [ref=e934]: 33 items
+                  - img [ref=e935]
+              - button "0.0% Store 20 Store $243,180 0.0% 33 items" [ref=e937] [cursor=pointer]:
+                - generic [ref=e939]: 0.0%
+                - generic [ref=e940]:
+                  - img [ref=e942]
+                  - generic [ref=e947]:
+                    - generic [ref=e948]: Store 20
+                    - generic [ref=e949]: Store
+                - generic [ref=e950]:
+                  - generic [ref=e951]: $243,180
+                  - generic [ref=e952]: 0.0%
+                - generic [ref=e953]:
+                  - generic [ref=e954]: 33 items
+                  - img [ref=e955]
+              - button "0.0% Store 21 Store $174,194 0.0% 33 items" [ref=e957] [cursor=pointer]:
+                - generic [ref=e959]: 0.0%
+                - generic [ref=e960]:
+                  - img [ref=e962]
+                  - generic [ref=e967]:
+                    - generic [ref=e968]: Store 21
+                    - generic [ref=e969]: Store
+                - generic [ref=e970]:
+                  - generic [ref=e971]: $174,194
+                  - generic [ref=e972]: 0.0%
+                - generic [ref=e973]:
+                  - generic [ref=e974]: 33 items
+                  - img [ref=e975]
+              - button "0.0% Store 22 Store $76,980 0.0% 33 items" [ref=e977] [cursor=pointer]:
+                - generic [ref=e979]: 0.0%
+                - generic [ref=e980]:
+                  - img [ref=e982]
+                  - generic [ref=e987]:
+                    - generic [ref=e988]: Store 22
+                    - generic [ref=e989]: Store
+                - generic [ref=e990]:
+                  - generic [ref=e991]: $76,980
+                  - generic [ref=e992]: 0.0%
+                - generic [ref=e993]:
+                  - generic [ref=e994]: 33 items
+                  - img [ref=e995]
+              - button "0.0% Store 23 Store $210,632 0.0% 33 items" [ref=e997] [cursor=pointer]:
+                - generic [ref=e999]: 0.0%
+                - generic [ref=e1000]:
+                  - img [ref=e1002]
+                  - generic [ref=e1007]:
+                    - generic [ref=e1008]: Store 23
+                    - generic [ref=e1009]: Store
+                - generic [ref=e1010]:
+                  - generic [ref=e1011]: $210,632
+                  - generic [ref=e1012]: 0.0%
+                - generic [ref=e1013]:
+                  - generic [ref=e1014]: 33 items
+                  - img [ref=e1015]
+              - button "0.0% Store 24 Store $431,046 0.0% 33 items" [ref=e1017] [cursor=pointer]:
+                - generic [ref=e1019]: 0.0%
+                - generic [ref=e1020]:
+                  - img [ref=e1022]
+                  - generic [ref=e1027]:
+                    - generic [ref=e1028]: Store 24
+                    - generic [ref=e1029]: Store
+                - generic [ref=e1030]:
+                  - generic [ref=e1031]: $431,046
+                  - generic [ref=e1032]: 0.0%
+                - generic [ref=e1033]:
+                  - generic [ref=e1034]: 33 items
+                  - img [ref=e1035]
+              - button "0.0% Store 25 Store $204,659 0.0% 33 items" [ref=e1037] [cursor=pointer]:
+                - generic [ref=e1039]: 0.0%
+                - generic [ref=e1040]:
+                  - img [ref=e1042]
+                  - generic [ref=e1047]:
+                    - generic [ref=e1048]: Store 25
+                    - generic [ref=e1049]: Store
+                - generic [ref=e1050]:
+                  - generic [ref=e1051]: $204,659
+                  - generic [ref=e1052]: 0.0%
+                - generic [ref=e1053]:
+                  - generic [ref=e1054]: 33 items
+                  - img [ref=e1055]
+              - button "0.0% Store 26 Store $139,418 0.0% 33 items" [ref=e1057] [cursor=pointer]:
+                - generic [ref=e1059]: 0.0%
+                - generic [ref=e1060]:
+                  - img [ref=e1062]
+                  - generic [ref=e1067]:
+                    - generic [ref=e1068]: Store 26
+                    - generic [ref=e1069]: Store
+                - generic [ref=e1070]:
+                  - generic [ref=e1071]: $139,418
+                  - generic [ref=e1072]: 0.0%
+                - generic [ref=e1073]:
+                  - generic [ref=e1074]: 33 items
+                  - img [ref=e1075]
+              - button "0.0% Store 27 Store $351,681 0.0% 33 items" [ref=e1077] [cursor=pointer]:
+                - generic [ref=e1079]: 0.0%
+                - generic [ref=e1080]:
+                  - img [ref=e1082]
+                  - generic [ref=e1087]:
+                    - generic [ref=e1088]: Store 27
+                    - generic [ref=e1089]: Store
+                - generic [ref=e1090]:
+                  - generic [ref=e1091]: $351,681
+                  - generic [ref=e1092]: 0.0%
+                - generic [ref=e1093]:
+                  - generic [ref=e1094]: 33 items
+                  - img [ref=e1095]
+              - button "0.0% Store 28 Store $338,157 0.0% 33 items" [ref=e1097] [cursor=pointer]:
+                - generic [ref=e1099]: 0.0%
+                - generic [ref=e1100]:
+                  - img [ref=e1102]
+                  - generic [ref=e1107]:
+                    - generic [ref=e1108]: Store 28
+                    - generic [ref=e1109]: Store
+                - generic [ref=e1110]:
+                  - generic [ref=e1111]: $338,157
+                  - generic [ref=e1112]: 0.0%
+                - generic [ref=e1113]:
+                  - generic [ref=e1114]: 33 items
+                  - img [ref=e1115]
+              - button "0.0% Store 29 Store $183,033 0.0% 33 items" [ref=e1117] [cursor=pointer]:
+                - generic [ref=e1119]: 0.0%
+                - generic [ref=e1120]:
+                  - img [ref=e1122]
+                  - generic [ref=e1127]:
+                    - generic [ref=e1128]: Store 29
+                    - generic [ref=e1129]: Store
+                - generic [ref=e1130]:
+                  - generic [ref=e1131]: $183,033
+                  - generic [ref=e1132]: 0.0%
+                - generic [ref=e1133]:
+                  - generic [ref=e1134]: 33 items
+                  - img [ref=e1135]
+              - button "0.0% Store 30 Store $134,818 0.0% 33 items" [ref=e1137] [cursor=pointer]:
+                - generic [ref=e1139]: 0.0%
+                - generic [ref=e1140]:
+                  - img [ref=e1142]
+                  - generic [ref=e1147]:
+                    - generic [ref=e1148]: Store 30
+                    - generic [ref=e1149]: Store
+                - generic [ref=e1150]:
+                  - generic [ref=e1151]: $134,818
+                  - generic [ref=e1152]: 0.0%
+                - generic [ref=e1153]:
+                  - generic [ref=e1154]: 33 items
+                  - img [ref=e1155]
+              - button "0.0% Store 31 Store $324,423 0.0% 33 items" [ref=e1157] [cursor=pointer]:
+                - generic [ref=e1159]: 0.0%
+                - generic [ref=e1160]:
+                  - img [ref=e1162]
+                  - generic [ref=e1167]:
+                    - generic [ref=e1168]: Store 31
+                    - generic [ref=e1169]: Store
+                - generic [ref=e1170]:
+                  - generic [ref=e1171]: $324,423
+                  - generic [ref=e1172]: 0.0%
+                - generic [ref=e1173]:
+                  - generic [ref=e1174]: 33 items
+                  - img [ref=e1175]
+              - button "0.0% Store 32 Store $107,863 0.0% 33 items" [ref=e1177] [cursor=pointer]:
+                - generic [ref=e1179]: 0.0%
+                - generic [ref=e1180]:
+                  - img [ref=e1182]
+                  - generic [ref=e1187]:
+                    - generic [ref=e1188]: Store 32
+                    - generic [ref=e1189]: Store
+                - generic [ref=e1190]:
+                  - generic [ref=e1191]: $107,863
+                  - generic [ref=e1192]: 0.0%
+                - generic [ref=e1193]:
+                  - generic [ref=e1194]: 33 items
+                  - img [ref=e1195]
+              - button "0.0% Store 33 Store $258,412 0.0% 33 items" [ref=e1197] [cursor=pointer]:
+                - generic [ref=e1199]: 0.0%
+                - generic [ref=e1200]:
+                  - img [ref=e1202]
+                  - generic [ref=e1207]:
+                    - generic [ref=e1208]: Store 33
+                    - generic [ref=e1209]: Store
+                - generic [ref=e1210]:
+                  - generic [ref=e1211]: $258,412
+                  - generic [ref=e1212]: 0.0%
+                - generic [ref=e1213]:
+                  - generic [ref=e1214]: 33 items
+                  - img [ref=e1215]
+              - button "0.0% Store 34 Store $310,207 0.0% 33 items" [ref=e1217] [cursor=pointer]:
+                - generic [ref=e1219]: 0.0%
+                - generic [ref=e1220]:
+                  - img [ref=e1222]
+                  - generic [ref=e1227]:
+                    - generic [ref=e1228]: Store 34
+                    - generic [ref=e1229]: Store
+                - generic [ref=e1230]:
+                  - generic [ref=e1231]: $310,207
+                  - generic [ref=e1232]: 0.0%
+                - generic [ref=e1233]:
+                  - generic [ref=e1234]: 33 items
+                  - img [ref=e1235]
+              - button "0.0% Store 35 Store $139,498 0.0% 33 items" [ref=e1237] [cursor=pointer]:
+                - generic [ref=e1239]: 0.0%
+                - generic [ref=e1240]:
+                  - img [ref=e1242]
+                  - generic [ref=e1247]:
+                    - generic [ref=e1248]: Store 35
+                    - generic [ref=e1249]: Store
+                - generic [ref=e1250]:
+                  - generic [ref=e1251]: $139,498
+                  - generic [ref=e1252]: 0.0%
+                - generic [ref=e1253]:
+                  - generic [ref=e1254]: 33 items
+                  - img [ref=e1255]
+              - button "0.0% Store 36 Store $288,377 0.0% 33 items" [ref=e1257] [cursor=pointer]:
+                - generic [ref=e1259]: 0.0%
+                - generic [ref=e1260]:
+                  - img [ref=e1262]
+                  - generic [ref=e1267]:
+                    - generic [ref=e1268]: Store 36
+                    - generic [ref=e1269]: Store
+                - generic [ref=e1270]:
+                  - generic [ref=e1271]: $288,377
+                  - generic [ref=e1272]: 0.0%
+                - generic [ref=e1273]:
+                  - generic [ref=e1274]: 33 items
+                  - img [ref=e1275]
+              - button "0.0% Store 37 Store $363,323 0.0% 33 items" [ref=e1277] [cursor=pointer]:
+                - generic [ref=e1279]: 0.0%
+                - generic [ref=e1280]:
+                  - img [ref=e1282]
+                  - generic [ref=e1287]:
+                    - generic [ref=e1288]: Store 37
+                    - generic [ref=e1289]: Store
+                - generic [ref=e1290]:
+                  - generic [ref=e1291]: $363,323
+                  - generic [ref=e1292]: 0.0%
+                - generic [ref=e1293]:
+                  - generic [ref=e1294]: 33 items
+                  - img [ref=e1295]
+              - button "0.0% Store 38 Store $343,285 0.0% 33 items" [ref=e1297] [cursor=pointer]:
+                - generic [ref=e1299]: 0.0%
+                - generic [ref=e1300]:
+                  - img [ref=e1302]
+                  - generic [ref=e1307]:
+                    - generic [ref=e1308]: Store 38
+                    - generic [ref=e1309]: Store
+                - generic [ref=e1310]:
+                  - generic [ref=e1311]: $343,285
+                  - generic [ref=e1312]: 0.0%
+                - generic [ref=e1313]:
+                  - generic [ref=e1314]: 33 items
+                  - img [ref=e1315]
+              - button "0.0% Store 39 Store $370,350 0.0% 33 items" [ref=e1317] [cursor=pointer]:
+                - generic [ref=e1319]: 0.0%
+                - generic [ref=e1320]:
+                  - img [ref=e1322]
+                  - generic [ref=e1327]:
+                    - generic [ref=e1328]: Store 39
+                    - generic [ref=e1329]: Store
+                - generic [ref=e1330]:
+                  - generic [ref=e1331]: $370,350
+                  - generic [ref=e1332]: 0.0%
+                - generic [ref=e1333]:
+                  - generic [ref=e1334]: 33 items
+                  - img [ref=e1335]
+              - button "0.0% Store 40 Store $338,913 0.0% 33 items" [ref=e1337] [cursor=pointer]:
+                - generic [ref=e1339]: 0.0%
+                - generic [ref=e1340]:
+                  - img [ref=e1342]
+                  - generic [ref=e1347]:
+                    - generic [ref=e1348]: Store 40
+                    - generic [ref=e1349]: Store
+                - generic [ref=e1350]:
+                  - generic [ref=e1351]: $338,913
+                  - generic [ref=e1352]: 0.0%
+                - generic [ref=e1353]:
+                  - generic [ref=e1354]: 33 items
+                  - img [ref=e1355]
+              - button "0.0% Store 41 Store $275,451 0.0% 33 items" [ref=e1357] [cursor=pointer]:
+                - generic [ref=e1359]: 0.0%
+                - generic [ref=e1360]:
+                  - img [ref=e1362]
+                  - generic [ref=e1367]:
+                    - generic [ref=e1368]: Store 41
+                    - generic [ref=e1369]: Store
+                - generic [ref=e1370]:
+                  - generic [ref=e1371]: $275,451
+                  - generic [ref=e1372]: 0.0%
+                - generic [ref=e1373]:
+                  - generic [ref=e1374]: 33 items
+                  - img [ref=e1375]
+              - button "0.0% Store 42 Store $168,365 0.0% 33 items" [ref=e1377] [cursor=pointer]:
+                - generic [ref=e1379]: 0.0%
+                - generic [ref=e1380]:
+                  - img [ref=e1382]
+                  - generic [ref=e1387]:
+                    - generic [ref=e1388]: Store 42
+                    - generic [ref=e1389]: Store
+                - generic [ref=e1390]:
+                  - generic [ref=e1391]: $168,365
+                  - generic [ref=e1392]: 0.0%
+                - generic [ref=e1393]:
+                  - generic [ref=e1394]: 33 items
+                  - img [ref=e1395]
+              - button "0.0% Store 43 Store $300,826 0.0% 33 items" [ref=e1397] [cursor=pointer]:
+                - generic [ref=e1399]: 0.0%
+                - generic [ref=e1400]:
+                  - img [ref=e1402]
+                  - generic [ref=e1407]:
+                    - generic [ref=e1408]: Store 43
+                    - generic [ref=e1409]: Store
+                - generic [ref=e1410]:
+                  - generic [ref=e1411]: $300,826
+                  - generic [ref=e1412]: 0.0%
+                - generic [ref=e1413]:
+                  - generic [ref=e1414]: 33 items
+                  - img [ref=e1415]
+              - button "0.1% Store 44 Store $1,131,462 0.1% 33 items" [ref=e1417] [cursor=pointer]:
+                - generic [ref=e1419]: 0.1%
+                - generic [ref=e1420]:
+                  - img [ref=e1422]
+                  - generic [ref=e1427]:
+                    - generic [ref=e1428]: Store 44
+                    - generic [ref=e1429]: Store
+                - generic [ref=e1430]:
+                  - generic [ref=e1431]: $1,131,462
+                  - generic [ref=e1432]: 0.1%
+                - generic [ref=e1433]:
+                  - generic [ref=e1434]: 33 items
+                  - img [ref=e1435]
+              - button "0.1% Store 45 Store $994,734 0.1% 33 items" [ref=e1437] [cursor=pointer]:
+                - generic [ref=e1439]: 0.1%
+                - generic [ref=e1440]:
+                  - img [ref=e1442]
+                  - generic [ref=e1447]:
+                    - generic [ref=e1448]: Store 45
+                    - generic [ref=e1449]: Store
+                - generic [ref=e1450]:
+                  - generic [ref=e1451]: $994,734
+                  - generic [ref=e1452]: 0.1%
+                - generic [ref=e1453]:
+                  - generic [ref=e1454]: 33 items
+                  - img [ref=e1455]
+              - button "0.1% Store 46 Store $760,958 0.1% 33 items" [ref=e1457] [cursor=pointer]:
+                - generic [ref=e1459]: 0.1%
+                - generic [ref=e1460]:
+                  - img [ref=e1462]
+                  - generic [ref=e1467]:
+                    - generic [ref=e1468]: Store 46
+                    - generic [ref=e1469]: Store
+                - generic [ref=e1470]:
+                  - generic [ref=e1471]: $760,958
+                  - generic [ref=e1472]: 0.1%
+                - generic [ref=e1473]:
+                  - generic [ref=e1474]: 33 items
+                  - img [ref=e1475]
+              - button "0.1% Store 47 Store $928,959 0.1% 33 items" [ref=e1477] [cursor=pointer]:
+                - generic [ref=e1479]: 0.1%
+                - generic [ref=e1480]:
+                  - img [ref=e1482]
+                  - generic [ref=e1487]:
+                    - generic [ref=e1488]: Store 47
+                    - generic [ref=e1489]: Store
+                - generic [ref=e1490]:
+                  - generic [ref=e1491]: $928,959
+                  - generic [ref=e1492]: 0.1%
+                - generic [ref=e1493]:
+                  - generic [ref=e1494]: 33 items
+                  - img [ref=e1495]
+              - button "0.1% Store 48 Store $653,495 0.1% 33 items" [ref=e1497] [cursor=pointer]:
+                - generic [ref=e1499]: 0.1%
+                - generic [ref=e1500]:
+                  - img [ref=e1502]
+                  - generic [ref=e1507]:
+                    - generic [ref=e1508]: Store 48
+                    - generic [ref=e1509]: Store
+                - generic [ref=e1510]:
+                  - generic [ref=e1511]: $653,495
+                  - generic [ref=e1512]: 0.1%
+                - generic [ref=e1513]:
+                  - generic [ref=e1514]: 33 items
+                  - img [ref=e1515]
+              - button "0.1% Store 49 Store $800,719 0.1% 33 items" [ref=e1517] [cursor=pointer]:
+                - generic [ref=e1519]: 0.1%
+                - generic [ref=e1520]:
+                  - img [ref=e1522]
+                  - generic [ref=e1527]:
+                    - generic [ref=e1528]: Store 49
+                    - generic [ref=e1529]: Store
+                - generic [ref=e1530]:
+                  - generic [ref=e1531]: $800,719
+                  - generic [ref=e1532]: 0.1%
+                - generic [ref=e1533]:
+                  - generic [ref=e1534]: 33 items
+                  - img [ref=e1535]
+              - button "0.0% Store 50 Store $519,719 0.0% 33 items" [ref=e1537] [cursor=pointer]:
+                - generic [ref=e1539]: 0.0%
+                - generic [ref=e1540]:
+                  - img [ref=e1542]
+                  - generic [ref=e1547]:
+                    - generic [ref=e1548]: Store 50
+                    - generic [ref=e1549]: Store
+                - generic [ref=e1550]:
+                  - generic [ref=e1551]: $519,719
+                  - generic [ref=e1552]: 0.0%
+                - generic [ref=e1553]:
+                  - generic [ref=e1554]: 33 items
+                  - img [ref=e1555]
+              - button "0.1% Store 51 Store $600,000 0.1% 33 items" [ref=e1557] [cursor=pointer]:
+                - generic [ref=e1559]: 0.1%
+                - generic [ref=e1560]:
+                  - img [ref=e1562]
+                  - generic [ref=e1567]:
+                    - generic [ref=e1568]: Store 51
+                    - generic [ref=e1569]: Store
+                - generic [ref=e1570]:
+                  - generic [ref=e1571]: $600,000
+                  - generic [ref=e1572]: 0.1%
+                - generic [ref=e1573]:
+                  - generic [ref=e1574]: 33 items
+                  - img [ref=e1575]
+              - button "0.0% Store 52 Store $50,743 0.0% 33 items" [ref=e1577] [cursor=pointer]:
+                - generic [ref=e1579]: 0.0%
+                - generic [ref=e1580]:
+                  - img [ref=e1582]
+                  - generic [ref=e1587]:
+                    - generic [ref=e1588]: Store 52
+                    - generic [ref=e1589]: Store
+                - generic [ref=e1590]:
+                  - generic [ref=e1591]: $50,743
+                  - generic [ref=e1592]: 0.0%
+                - generic [ref=e1593]:
+                  - generic [ref=e1594]: 33 items
+                  - img [ref=e1595]
+              - button "0.0% Store 53 Store $211,095 0.0% 33 items" [ref=e1597] [cursor=pointer]:
+                - generic [ref=e1599]: 0.0%
+                - generic [ref=e1600]:
+                  - img [ref=e1602]
+                  - generic [ref=e1607]:
+                    - generic [ref=e1608]: Store 53
+                    - generic [ref=e1609]: Store
+                - generic [ref=e1610]:
+                  - generic [ref=e1611]: $211,095
+                  - generic [ref=e1612]: 0.0%
+                - generic [ref=e1613]:
+                  - generic [ref=e1614]: 33 items
+                  - img [ref=e1615]
+              - button "0.0% Store 54 Store $201,576 0.0% 33 items" [ref=e1617] [cursor=pointer]:
+                - generic [ref=e1619]: 0.0%
+                - generic [ref=e1620]:
+                  - img [ref=e1622]
+                  - generic [ref=e1627]:
+                    - generic [ref=e1628]: Store 54
+                    - generic [ref=e1629]: Store
+                - generic [ref=e1630]:
+                  - generic [ref=e1631]: $201,576
+                  - generic [ref=e1632]: 0.0%
+                - generic [ref=e1633]:
+                  - generic [ref=e1634]: 33 items
+                  - img [ref=e1635]
+    - contentinfo [ref=e1637]:
+      - generic [ref=e1639]:
+        - paragraph [ref=e1640]: MLRF Dashboard v0.1.0
+        - paragraph [ref=e1641]: Built with React + TypeScript + visx
+  - generic [ref=e1642]: $-350k
+  - generic [ref=e1643]: 1.8k
+```

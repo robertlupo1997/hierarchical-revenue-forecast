@@ -75,7 +75,6 @@ services:
     volumes:
       - ./deploy/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./deploy/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./deploy/grafana/mlrf-dashboard.json:/etc/grafana/provisioning/dashboards/json/mlrf-dashboard.json:ro
       - grafana_data:/var/lib/grafana
     ports:
       - "3001:3000"

@@ -1,0 +1,129 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - img [ref=e12]
+          - generic [ref=e15]:
+            - heading "Multi-LOB Revenue Forecasting" [level=1] [ref=e16]
+            - paragraph [ref=e17]: 90-day hierarchical forecast with SHAP explainability
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - img [ref=e20]
+            - textbox [ref=e22]: 2017-08-01
+          - generic [ref=e23]:
+            - img [ref=e24]
+            - combobox "Forecast horizon" [ref=e26] [cursor=pointer]:
+              - option "15 days"
+              - option "30 days"
+              - option "60 days"
+              - option "90 days" [selected]
+          - link "Compare" [ref=e27] [cursor=pointer]:
+            - /url: /compare
+            - img [ref=e28]
+            - generic [ref=e31]: Compare
+          - link "Batch" [ref=e32] [cursor=pointer]:
+            - /url: /batch
+            - img [ref=e33]
+            - generic [ref=e36]: Batch
+          - button "Refresh" [ref=e37] [cursor=pointer]:
+            - img [ref=e38]
+            - generic [ref=e43]: Refresh
+          - button "Switch to light mode" [ref=e44] [cursor=pointer]:
+            - img
+            - img [ref=e45]
+      - generic [ref=e47]:
+        - img [ref=e48]
+        - generic [ref=e50]: Using demo data. Connect API for live data.
+  - main [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - img [ref=e56]
+          - generic [ref=e59]: +12.3%
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: Total Forecast
+          - paragraph [ref=e62]: $5.25M
+          - paragraph [ref=e63]: 90-day projection
+      - generic [ref=e64]:
+        - img [ref=e67]
+        - generic [ref=e69]:
+          - paragraph [ref=e70]: Active Stores
+          - paragraph [ref=e71]: "4"
+          - paragraph [ref=e72]: Across all regions
+      - generic [ref=e73]:
+        - img [ref=e76]
+        - generic [ref=e80]:
+          - paragraph [ref=e81]: Product Families
+          - paragraph [ref=e82]: "33"
+          - paragraph [ref=e83]: Hierarchical categories
+      - generic [ref=e84]:
+        - img [ref=e87]
+        - generic [ref=e89]:
+          - paragraph [ref=e90]: Model Accuracy
+          - paragraph [ref=e91]: "0.42"
+          - paragraph [ref=e92]: RMSLE (lower is better)
+    - generic [ref=e93]:
+      - generic [ref=e95]:
+        - generic [ref=e96]:
+          - heading "Forecast Explanation" [level=2] [ref=e97]
+          - paragraph [ref=e98]: Store 1 · GROCERY I
+        - link "Details" [ref=e99] [cursor=pointer]:
+          - /url: /explain/1/GROCERY%20I
+          - text: Details
+          - img [ref=e100]
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e116]:
+            - heading "What-If Analysis" [level=2] [ref=e117]
+            - paragraph [ref=e118]: Explore how changes affect predictions
+          - button "Reset" [disabled]:
+            - img
+            - text: Reset
+        - generic [ref=e119]:
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - img [ref=e124]
+                - generic [ref=e127]: Oil Price
+              - generic [ref=e128]: 0%
+            - generic [ref=e129]:
+              - slider [ref=e130] [cursor=pointer]: "1"
+              - generic [ref=e131]:
+                - generic [ref=e132]: "-50%"
+                - generic [ref=e133]: 100%
+          - generic [ref=e134]:
+            - generic [ref=e135]:
+              - generic [ref=e136]:
+                - img [ref=e138]
+                - generic [ref=e141]: Promotion
+              - generic [ref=e142]: "No"
+            - generic [ref=e143]:
+              - button "No" [ref=e144] [cursor=pointer]
+              - button "Yes" [ref=e145] [cursor=pointer]
+          - generic [ref=e146]:
+            - generic [ref=e147]:
+              - generic [ref=e148]:
+                - img [ref=e150]
+                - generic [ref=e152]: Day of Week
+              - generic [ref=e153]: Wed
+            - generic [ref=e154]:
+              - button "S" [ref=e155] [cursor=pointer]
+              - button "M" [ref=e156] [cursor=pointer]
+              - button "T" [ref=e157] [cursor=pointer]
+              - button "W" [ref=e158] [cursor=pointer]
+              - button "T" [ref=e159] [cursor=pointer]
+              - button "F" [ref=e160] [cursor=pointer]
+              - button "S" [ref=e161] [cursor=pointer]
+        - button "Analyze Impact" [ref=e162] [cursor=pointer]
+      - generic [ref=e175]:
+        - heading "Revenue by Hierarchy" [level=2] [ref=e176]
+        - paragraph [ref=e177]: Drill down through stores and product families
+  - contentinfo [ref=e182]:
+    - generic [ref=e184]:
+      - paragraph [ref=e185]: MLRF Dashboard v0.1.0
+      - paragraph [ref=e186]: Built with React + TypeScript + visx
+```
