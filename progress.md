@@ -407,13 +407,13 @@ NEXTSTEPS_COMPLETE
 ### Phase 4: UX Features
 - [x] **4.1** What-If Analysis
 - [x] **4.2** Store Comparison Mode
-- [ ] **4.3** Mobile Responsive Design
-- [ ] **4.4** Batch Prediction CSV Upload
+- [x] **4.3** Mobile Responsive Design
+- [x] **4.4** Batch Prediction CSV Upload
 
 ### Phase 5: Documentation
-- [ ] **5.1** Model Card
-- [ ] **5.2** API Error Documentation
-- [ ] **5.3** Architecture Decision Records (5 ADRs)
+- [x] **5.1** Model Card
+- [x] **5.2** API Error Documentation
+- [x] **5.3** Architecture Decision Records (5 ADRs)
 - [ ] **5.4** Setup Guide
 
 ### Completed Tasks
@@ -688,5 +688,54 @@ NEXTSTEPS_COMPLETE
   - ESLint: PASS (1 pre-existing warning)
   - Build: PASS (38.24 KB CSS, ~870 KB JS)
 
+- [x] **4.4** Batch Prediction CSV Upload (commit 332756b)
+  - Created BatchUpload component with drag-and-drop CSV upload
+  - CSV parsing with validation (store_nbr 1-54, valid families, YYYY-MM-DD date, horizon 15/30/60/90)
+  - Progress indicator during batch processing (batches of 10 for responsive UX)
+  - Results table with status indicators (pending/processing/success/error)
+  - Download results as CSV or Excel format
+  - Sample CSV download button for format reference
+  - Created Batch page with upload workflow, format documentation, tips
+  - Added /batch route to App.tsx
+  - Added Batch navigation links to Dashboard (desktop and mobile)
+  - Maximum 100 predictions per batch with validation
+  - TypeScript check: PASS
+  - ESLint: PASS (1 pre-existing warning)
+  - Build: PASS (39.51 KB CSS, ~898 KB JS)
+
+### Phase 4 Complete - UX Features
+
+- [x] **5.1** Model Card (commit 5923b4f)
+  - Created docs/MODEL_CARD.md (258 lines) following ML best practices
+  - Model overview: LightGBM gradient boosting v1.0.0, ONNX Runtime 1.18.0
+  - Training data: Kaggle Store Sales (2.8M rows, 54 stores × 33 families)
+  - Performance metrics from actual model: RMSLE 0.477, RMSE 214.58, MAE 58.04
+  - 27 features documented (date, external, lag, rolling statistics, categorical)
+  - Intended use cases: Multi-LOB forecasting, demand planning, business analytics
+  - Out-of-scope: real-time pricing, individual customer predictions
+  - Limitations: Ecuador data only, external shocks not captured, 90+ days history required
+  - Ethical considerations: no PII, fairness notes, responsible use guidelines
+  - Deployment info: API endpoints, latency targets, caching strategy
+  - Maintenance: retraining recommendations, version history
+  - References to Kaggle data source, LightGBM, ONNX Runtime, SHAP, hierarchicalforecast
+
+- [x] **5.2** API Error Documentation (commit 61be4d1)
+  - Added comprehensive Error Codes section to mlrf-api/README.md
+  - Documented all 15 error codes with HTTP status, description, and resolution
+  - Three categories: Authentication (AUTH_REQUIRED), Rate Limiting (RATE_LIMITED), Validation (12 codes), Server (3 codes)
+  - Added valid product families reference (33 families)
+  - Included example error responses with curl commands
+  - Fixed port references from 8080 to 8081 throughout README
+
+- [x] **5.3** Architecture Decision Records (5 ADRs)
+  - Created docs/adr/ directory with 5 ADRs following Michael Nygard format
+  - ADR-001: Polars Over Pandas - explains 80x performance gain for 2.8M row processing
+  - ADR-002: Go + ONNX Runtime - documents sub-10ms inference latency decision
+  - ADR-003: visx for SHAP Waterfall - justifies custom chart (shap.js lacks waterfall)
+  - ADR-004: Hierarchical Reconciliation - covers MinTrace shrinkage method selection
+  - ADR-005: Redis Tiered Caching - explains L1/L2 cache architecture
+  - Each ADR includes: Status, Context, Decision, Consequences, Mitigations, References
+  - Total: ~22KB of architectural documentation
+
 ### Current Task
-- [ ] **4.4** Batch Prediction CSV Upload - NEXT UP
+- [ ] **5.4** Setup Guide - NEXT UP
