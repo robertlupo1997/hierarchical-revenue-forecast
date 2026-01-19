@@ -26,9 +26,12 @@ Last mode: DASHBOARD
   - Wired to Dashboard with horizon state
   - Updated subtitle and stat card to reflect selected horizon
   - Component uses existing design system styling (BarChart3 icon, card styling)
+- [x] **1.3** Wire date picker to trigger refetch (commit c080e9f)
+  - Added min/max date constraints (2013-01-01 to 2017-08-15)
+  - Matches Kaggle Store Sales dataset date range
+  - Date changes already trigger refetch via React Query queryKey
 
 ### Next Up
-- [ ] **1.3** Wire date picker to trigger refetch (TypeScript)
 - [ ] **1.4** Connect ForecastChart to real data (TypeScript)
 
 ### Phase 2 (Future)
