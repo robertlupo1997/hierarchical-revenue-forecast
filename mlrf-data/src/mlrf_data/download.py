@@ -49,6 +49,6 @@ def download_competition_data(data_dir: Path) -> None:
 
 if __name__ == "__main__":
     # Default data directory is project root/data
-    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_root = Path(__file__).parent.parent.parent.parent
     data_dir = project_root / "data"
     download_competition_data(data_dir)

@@ -179,7 +179,7 @@ def preprocess_pipeline(raw_dir: Path, processed_dir: Path) -> pl.DataFrame:
 
 
 if __name__ == "__main__":
-    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_root = Path(__file__).parent.parent.parent.parent
     raw_dir = project_root / "data" / "raw"
     processed_dir = project_root / "data" / "processed"
 

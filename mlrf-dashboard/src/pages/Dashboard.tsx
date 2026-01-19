@@ -282,6 +282,8 @@ export function Dashboard() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
+                  min="2013-01-01"
+                  max="2017-08-15"
                   className="bg-transparent text-sm focus:outline-none"
                 />
               </div>

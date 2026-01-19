@@ -16,18 +16,27 @@ MAX_ITERATIONS=${2:-50}
 ITERATION=0
 
 # Validate mode
-if [[ "$MODE" != "plan" && "$MODE" != "build" ]]; then
-    echo "Usage: ./loop.sh [plan|build] [max_iterations]"
+if [[ "$MODE" != "plan" && "$MODE" != "build" && "$MODE" != "fix" && "$MODE" != "redesign" && "$MODE" != "dashboard" ]]; then
+    echo "Usage: ./loop.sh [plan|build|fix|redesign|dashboard] [max_iterations]"
     echo ""
     echo "Modes:"
-    echo "  plan   - Analyze specs vs code, update IMPLEMENTATION_PLAN.md (no implementation)"
-    echo "  build  - Implement one task per iteration, run tests, commit"
+    echo "  plan      - Analyze specs vs code, update IMPLEMENTATION_PLAN.md (no implementation)"
+    echo "  build     - Implement one task per iteration, run tests, commit"
+    echo "  fix       - Run pipeline, diagnose and fix errors until success"
+    echo "  redesign  - Redesign frontend UI with polished, professional look"
+    echo "  dashboard - Implement dashboard feature gaps (real data, horizon selector, etc.)"
     exit 1
 fi
 
 # Select prompt file
 if [[ "$MODE" == "plan" ]]; then
     PROMPT_FILE="PROMPT_plan.md"
+elif [[ "$MODE" == "fix" ]]; then
+    PROMPT_FILE="PROMPT_fix.md"
+elif [[ "$MODE" == "redesign" ]]; then
+    PROMPT_FILE="PROMPT_redesign.md"
+elif [[ "$MODE" == "dashboard" ]]; then
+    PROMPT_FILE="PROMPT_dashboard.md"
 else
     PROMPT_FILE="PROMPT_build.md"
 fi
@@ -85,6 +94,24 @@ while [ $ITERATION -lt $MAX_ITERATIONS ]; do
     if grep -q "PHASE_1_5_COMPLETE" progress.md 2>/dev/null; then
         echo ""
         echo "=== Phase 1.5 Complete - Integration Done ==="
+        exit 0
+    fi
+
+    if grep -q "PIPELINE_COMPLETE" progress.md 2>/dev/null && [[ "$MODE" == "fix" ]]; then
+        echo ""
+        echo "=== Pipeline Complete - All Issues Fixed ==="
+        exit 0
+    fi
+
+    if grep -q "REDESIGN_COMPLETE" progress.md 2>/dev/null && [[ "$MODE" == "redesign" ]]; then
+        echo ""
+        echo "=== Redesign Complete - UI Polished ==="
+        exit 0
+    fi
+
+    if grep -q "DASHBOARD_GAPS_COMPLETE" progress.md 2>/dev/null && [[ "$MODE" == "dashboard" ]]; then
+        echo ""
+        echo "=== Dashboard Gaps Complete - All Features Implemented ==="
         exit 0
     fi
 

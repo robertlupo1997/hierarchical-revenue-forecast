@@ -1,13 +1,63 @@
 # MLRF Implementation Progress
 
-## Current Status: Phase 1 COMPLETE - All phases implemented
+## Current Status: Phase 1 COMPLETE - Dashboard Gaps Implementation IN PROGRESS
 
 Last updated: 2026-01-18
-Last mode: BUILD
+Last mode: DASHBOARD
+
+---
+
+## Dashboard Gaps Implementation
+
+### Completed Tasks
+- [x] **1.0** API: Add /predict/simple endpoint (commit 7e7870e)
+  - Added SimplePredictRequest struct (store_nbr, family, date, horizon)
+  - Added PredictSimple handler with horizon validation (15/30/60/90)
+  - Uses mock features (27 zeros) - future work will add feature matrix lookup
+  - Integrated with existing caching and inference
+- [x] **1.1** Create `useForecastData` hook (commit ef266b0)
+  - Added SimplePredictRequest type and predictSimple to API client
+  - Added fetchSimplePrediction convenience function
+  - Created useForecastData hook with React Query integration
+  - Fetches predictions at weekly intervals across horizon
+  - Generates confidence intervals (80% and 95% CI)
+- [x] **1.2** Create `HorizonSelect` component (commit a088d06)
+  - Created HorizonSelect.tsx with 15/30/60/90 day options
+  - Wired to Dashboard with horizon state
+  - Updated subtitle and stat card to reflect selected horizon
+  - Component uses existing design system styling (BarChart3 icon, card styling)
+
+### Next Up
+- [ ] **1.3** Wire date picker to trigger refetch (TypeScript)
+- [ ] **1.4** Connect ForecastChart to real data (TypeScript)
+
+### Phase 2 (Future)
+- [ ] **2.0** API: Add trend fields to hierarchy response
+- [ ] **2.1** Calculate real trend badges
+- [ ] **2.2** Add store search/filter to HierarchyDrilldown
+- [ ] **2.3** Implement CSV export
+
+### Phase 3 (Future)
+- [ ] **3.1** Fix README port references
 
 ---
 
 ## Current Iteration
+Task: Dashboard UI Redesign - Theme-Aware Components
+Status: COMPLETE
+Changes:
+1. HierarchyDrilldown.tsx - Converted to semantic CSS variables, added icons per level (Layers, Store, Package, Box), staggered animations, hover effects with percentage badges
+2. ModelComparison.tsx - Converted to theme-aware colors, improved table styling, award badge for best model, dropdown with chevron icon
+3. ShapWaterfall.tsx - Theme-aware chart colors using CSS variables, improved legend with icons (ArrowUp, ArrowDown, Target, Baseline), polished tooltips
+
+Verification (2026-01-18):
+- TypeScript: PASS
+- ESLint: PASS (1 pre-existing warning in theme.tsx)
+- Build: PASS (32.16 KB CSS, ~133 KB JS, ~447 KB charts)
+
+---
+
+## Previous Iteration
 Task: Fix pipeline script port and metrics issues
 Status: COMPLETE
 Fixes applied:
@@ -191,3 +241,7 @@ Go is not installed in the WSL environment. Verification commands must be run ma
 - Read AGENTS.md for build commands and patterns
 - Go API uses 27 features (25 numeric + 2 categorical encoded)
 - Dashboard uses mock data when API is unavailable
+
+---
+
+REDESIGN_COMPLETE

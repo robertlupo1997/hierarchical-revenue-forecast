@@ -277,7 +277,7 @@ def features_pipeline(
 
 
 if __name__ == "__main__":
-    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_root = Path(__file__).parent.parent.parent.parent
     processed_dir = project_root / "data" / "processed"
     features_dir = project_root / "data" / "features"
 

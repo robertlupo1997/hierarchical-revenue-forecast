@@ -233,7 +233,7 @@ def hierarchy_pipeline(features_dir: Path, models_dir: Path) -> dict:
 
 
 if __name__ == "__main__":
-    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_root = Path(__file__).parent.parent.parent.parent
     features_dir = project_root / "data" / "features"
     models_dir = project_root / "models"
 
