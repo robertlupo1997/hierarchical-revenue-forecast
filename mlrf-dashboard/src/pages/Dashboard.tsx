@@ -12,6 +12,7 @@ import {
   GitBranch,
   Sparkles,
   AlertCircle,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 import { ShapWaterfall } from '../components/ShapWaterfall';
@@ -387,6 +388,20 @@ export function Dashboard() {
 
               {/* Horizon selector */}
               <HorizonSelect value={horizon} onChange={setHorizon} />
+
+              {/* Compare link */}
+              <Link
+                to="/compare"
+                className={cn(
+                  'flex h-9 items-center gap-2 rounded-lg px-3',
+                  'bg-secondary text-secondary-foreground',
+                  'transition-all duration-200',
+                  'hover:bg-secondary/80'
+                )}
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+                <span className="text-sm font-medium">Compare</span>
+              </Link>
 
               {/* Refresh button */}
               <button
