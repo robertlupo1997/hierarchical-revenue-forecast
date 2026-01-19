@@ -390,7 +390,7 @@ NEXTSTEPS_COMPLETE
 - [x] **1.2** CORS Restriction (whitelist origins)
 - [x] **1.3** Rate Limiting (token bucket, 100 req/sec)
 - [x] **1.4** Input Validation Enhancement
-- [ ] **1.5** Structured Error Responses
+- [x] **1.5** Structured Error Responses
 - [ ] **1.6** Kubernetes Deployment Manifests
 
 ### Phase 2: Observability
@@ -467,5 +467,18 @@ NEXTSTEPS_COMPLETE
   - Created validation_test.go with 50+ unit tests
   - Note: Go not installed in WSL; run `go test ./internal/handlers/...` manually
 
+- [x] **1.5** Structured Error Responses (commit 003e1f2)
+  - Created mlrf-api/internal/handlers/errors.go with centralized error handling
+  - ErrorResponse struct with error, code, and request_id fields
+  - WriteError helper function sets Content-Type, status code, and encodes JSON
+  - Request ID included when available in context
+  - Standard error codes defined: AUTH_REQUIRED, RATE_LIMITED, INVALID_*, MODEL_UNAVAILABLE, etc.
+  - Convenience helpers: WriteBadRequest, WriteUnauthorized, WriteTooManyRequests, etc.
+  - Updated all handlers (Predict, PredictBatch, PredictSimple, Explain, Hierarchy)
+  - All http.Error() calls replaced with structured WriteError calls
+  - Created errors_test.go with 20+ unit tests
+  - Tests verify all error responses have required error/code fields
+  - Note: Go not installed in WSL; run `go test ./internal/handlers/...` manually
+
 ### Current Task
-- [ ] **1.5** Structured Error Responses - NEXT UP
+- [ ] **1.6** Kubernetes Deployment Manifests - NEXT UP
