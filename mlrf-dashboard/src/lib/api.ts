@@ -8,6 +8,13 @@ export interface PredictRequest {
   horizon: number;
 }
 
+export interface SimplePredictRequest {
+  store_nbr: number;
+  family: string;
+  date: string;
+  horizon: number;
+}
+
 export interface PredictResponse {
   store_nbr: number;
   family: string;
@@ -98,6 +105,13 @@ class ApiClient {
     });
   }
 
+  async predictSimple(request: SimplePredictRequest): Promise<PredictResponse> {
+    return this.fetch<PredictResponse>('/predict/simple', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
   async predictBatch(request: BatchPredictRequest): Promise<BatchPredictResponse> {
     return this.fetch<BatchPredictResponse>('/predict/batch', {
       method: 'POST',
@@ -150,4 +164,18 @@ export async function fetchHierarchy(date: string): Promise<HierarchyNode> {
 
 export async function fetchMetrics(): Promise<ModelMetric[]> {
   return apiClient.getMetrics();
+}
+
+export async function fetchSimplePrediction(
+  storeNbr: number,
+  family: string,
+  date: string,
+  horizon: number
+): Promise<PredictResponse> {
+  return apiClient.predictSimple({
+    store_nbr: storeNbr,
+    family,
+    date,
+    horizon,
+  });
 }
