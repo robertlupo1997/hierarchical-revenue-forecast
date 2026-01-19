@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlrf-config
+  namespace: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf-config
+    app.kubernetes.io/part-of: mlrf
+data:
+  # API Configuration
+  cors-origins: "http://mlrf.local,https://mlrf.local"
+  rate-limit-rps: "100"
+  rate-limit-burst: "200"
+
+  # Dashboard Configuration (external API URL for browser requests)
+  api-url: "http://api.mlrf.local"
+
+  # Feature toggles
+  enable-shap: "true"
+  enable-hierarchy: "true"

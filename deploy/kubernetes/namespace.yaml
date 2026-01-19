@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf
+    app.kubernetes.io/description: Multi-LOB Revenue Forecasting System

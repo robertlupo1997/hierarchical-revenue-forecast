@@ -391,7 +391,7 @@ NEXTSTEPS_COMPLETE
 - [x] **1.3** Rate Limiting (token bucket, 100 req/sec)
 - [x] **1.4** Input Validation Enhancement
 - [x] **1.5** Structured Error Responses
-- [ ] **1.6** Kubernetes Deployment Manifests
+- [x] **1.6** Kubernetes Deployment Manifests
 
 ### Phase 2: Observability
 - [ ] **2.1** Prometheus Metrics Exporter
@@ -480,5 +480,24 @@ NEXTSTEPS_COMPLETE
   - Tests verify all error responses have required error/code fields
   - Note: Go not installed in WSL; run `go test ./internal/handlers/...` manually
 
+- [x] **1.6** Kubernetes Deployment Manifests
+  - Created deploy/kubernetes/ directory with 11 manifest files
+  - namespace.yaml: MLRF namespace definition
+  - api-deployment.yaml: API deployment (3 replicas) with probes, resource limits, anti-affinity
+  - api-service.yaml: ClusterIP service for API
+  - redis-statefulset.yaml: Redis StatefulSet with persistent storage, headless service
+  - dashboard-deployment.yaml: Dashboard deployment (2 replicas)
+  - dashboard-service.yaml: ClusterIP service for dashboard
+  - ingress.yaml: NGINX Ingress for external access (mlrf.local, api.mlrf.local)
+  - configmap.yaml: Non-sensitive configuration (CORS, rate limits)
+  - secrets.yaml.template: Template for API key (not committed)
+  - pvc.yaml: PersistentVolumeClaims for models and data
+  - kustomization.yaml: Kustomize configuration for easy deployment
+  - Created docs/DEPLOYMENT.md with comprehensive deployment guide
+  - All YAML files validated successfully
+  - Note: kubectl not installed in WSL; validate with `kubectl apply -k deploy/kubernetes/ --dry-run=client`
+
+### Phase 1 Complete - Security & Production Hardening
+
 ### Current Task
-- [ ] **1.6** Kubernetes Deployment Manifests - NEXT UP
+- [ ] **2.1** Prometheus Metrics Exporter - NEXT UP

@@ -1,0 +1,67 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlrf-ingress
+  namespace: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf-ingress
+    app.kubernetes.io/part-of: mlrf
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, X-API-Key"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: mlrf.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mlrf-dashboard
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: mlrf-api
+            port:
+              number: 8081
+  # TLS configuration (uncomment for production)
+  # tls:
+  # - hosts:
+  #   - mlrf.local
+  #   secretName: mlrf-tls-secret
+---
+# Alternative: Separate ingress for API with path rewriting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlrf-api-ingress
+  namespace: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf-api-ingress
+    app.kubernetes.io/part-of: mlrf
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: api.mlrf.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mlrf-api
+            port:
+              number: 8081

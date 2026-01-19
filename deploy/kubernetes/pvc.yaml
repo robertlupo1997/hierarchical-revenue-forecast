@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlrf-models-pvc
+  namespace: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf-models-pvc
+    app.kubernetes.io/part-of: mlrf
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 1Gi
+  # Uncomment and adjust for your storage class
+  # storageClassName: nfs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlrf-data-pvc
+  namespace: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf-data-pvc
+    app.kubernetes.io/part-of: mlrf
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 10Gi
+  # Uncomment and adjust for your storage class
+  # storageClassName: nfs

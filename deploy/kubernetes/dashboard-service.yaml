@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlrf-dashboard
+  namespace: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf-dashboard
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: mlrf
+spec:
+  type: ClusterIP
+  selector:
+    app: mlrf-dashboard
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP

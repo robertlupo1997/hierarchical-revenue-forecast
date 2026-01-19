@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlrf-api
+  namespace: mlrf
+  labels:
+    app.kubernetes.io/name: mlrf-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: mlrf
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mlrf-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: mlrf-api
+        app.kubernetes.io/name: mlrf-api
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/metrics/prometheus"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: api
+        image: mlrf-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+          name: http
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "8081"
+        - name: REDIS_URL
+          value: "redis://mlrf-redis:6379"
+        - name: MODEL_PATH
+          value: "/app/models/lightgbm_model.onnx"
+        - name: FEATURE_PATH
+          value: "/app/data/features/feature_matrix.parquet"
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mlrf-secrets
+              key: api-key
+              optional: true
+        - name: CORS_ORIGINS
+          valueFrom:
+            configMapKeyRef:
+              name: mlrf-config
+              key: cors-origins
+        - name: RATE_LIMIT_RPS
+          valueFrom:
+            configMapKeyRef:
+              name: mlrf-config
+              key: rate-limit-rps
+        - name: RATE_LIMIT_BURST
+          valueFrom:
+            configMapKeyRef:
+              name: mlrf-config
+              key: rate-limit-burst
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: models
+          mountPath: /app/models
+          readOnly: true
+        - name: data
+          mountPath: /app/data
+          readOnly: true
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: mlrf-models-pvc
+      - name: data
+        persistentVolumeClaim:
+          claimName: mlrf-data-pvc
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - mlrf-api
+              topologyKey: kubernetes.io/hostname
