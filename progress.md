@@ -389,7 +389,7 @@ NEXTSTEPS_COMPLETE
 - [x] **1.1** API Key Authentication middleware
 - [x] **1.2** CORS Restriction (whitelist origins)
 - [x] **1.3** Rate Limiting (token bucket, 100 req/sec)
-- [ ] **1.4** Input Validation Enhancement
+- [x] **1.4** Input Validation Enhancement
 - [ ] **1.5** Structured Error Responses
 - [ ] **1.6** Kubernetes Deployment Manifests
 
@@ -453,5 +453,19 @@ NEXTSTEPS_COMPLETE
   - Updated docker-compose.yml with MLRF_RATE_LIMIT_RPS/BURST env vars
   - Note: Go not installed in WSL; run `go test ./internal/middleware/...` manually
 
+- [x] **1.4** Input Validation Enhancement
+  - Created mlrf-api/internal/handlers/validation.go with centralized helpers
+  - All 33 product family names whitelisted (ValidFamilies map)
+  - Date format validation: YYYY-MM-DD format enforced
+  - Feature array length validation: exactly 27 elements required
+  - Batch size limit: max 100 predictions per request
+  - Store number validation: must be positive
+  - Horizon validation: 15, 30, 60, or 90 only
+  - Structured error codes: INVALID_DATE, INVALID_FAMILY, INVALID_FEATURES, BATCH_TOO_LARGE, etc.
+  - Updated Predict, PredictBatch, and PredictSimple handlers
+  - Batch validation includes per-prediction index in error messages
+  - Created validation_test.go with 50+ unit tests
+  - Note: Go not installed in WSL; run `go test ./internal/handlers/...` manually
+
 ### Current Task
-- [ ] **1.4** Input Validation Enhancement - NEXT UP
+- [ ] **1.5** Structured Error Responses - NEXT UP

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -76,20 +77,20 @@ func (h *Handlers) Predict(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate request
-	if req.StoreNbr <= 0 {
-		http.Error(w, `{"error":"store_nbr must be positive"}`, http.StatusBadRequest)
+	if err := ValidateStoreNbr(req.StoreNbr); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
-	if req.Family == "" {
-		http.Error(w, `{"error":"family is required"}`, http.StatusBadRequest)
+	if err := ValidateFamily(req.Family); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
-	if req.Date == "" {
-		http.Error(w, `{"error":"date is required"}`, http.StatusBadRequest)
+	if err := ValidateDate(req.Date); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
-	if len(req.Features) == 0 {
-		http.Error(w, `{"error":"features are required"}`, http.StatusBadRequest)
+	if err := ValidateFeatures(req.Features); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -162,9 +163,30 @@ func (h *Handlers) PredictBatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.Predictions) == 0 {
-		http.Error(w, `{"error":"predictions array is empty"}`, http.StatusBadRequest)
+	// Validate batch size
+	if err := ValidateBatchSize(len(req.Predictions)); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
+	}
+
+	// Validate each prediction in the batch
+	for i, pred := range req.Predictions {
+		if err := ValidateStoreNbr(pred.StoreNbr); err != nil {
+			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			return
+		}
+		if err := ValidateFamily(pred.Family); err != nil {
+			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			return
+		}
+		if err := ValidateDate(pred.Date); err != nil {
+			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			return
+		}
+		if err := ValidateFeatures(pred.Features); err != nil {
+			http.Error(w, `{"error":"prediction[`+fmt.Sprint(i)+`]: `+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
+			return
+		}
 	}
 
 	responses := make([]PredictResponse, 0, len(req.Predictions))
@@ -248,22 +270,20 @@ func (h *Handlers) PredictSimple(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate request
-	if req.StoreNbr <= 0 {
-		http.Error(w, `{"error":"store_nbr must be positive"}`, http.StatusBadRequest)
+	if err := ValidateStoreNbr(req.StoreNbr); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
-	if req.Family == "" {
-		http.Error(w, `{"error":"family is required"}`, http.StatusBadRequest)
+	if err := ValidateFamily(req.Family); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
-	if req.Date == "" {
-		http.Error(w, `{"error":"date is required"}`, http.StatusBadRequest)
+	if err := ValidateDate(req.Date); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
-	// Validate horizon is one of the allowed values
-	validHorizons := map[int]bool{15: true, 30: true, 60: true, 90: true}
-	if !validHorizons[req.Horizon] {
-		http.Error(w, `{"error":"horizon must be 15, 30, 60, or 90"}`, http.StatusBadRequest)
+	if err := ValidateHorizon(req.Horizon); err != nil {
+		http.Error(w, `{"error":"`+err.Message+`","code":"`+err.Code+`"}`, http.StatusBadRequest)
 		return
 	}
 
