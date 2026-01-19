@@ -105,6 +105,7 @@ func main() {
 	// Routes
 	r.Get("/health", h.Health)
 	r.Post("/predict", h.Predict)
+	r.Post("/predict/simple", h.PredictSimple)
 	r.Post("/predict/batch", h.PredictBatch)
 	r.Post("/explain", h.Explain)
 	r.Get("/hierarchy", h.Hierarchy)

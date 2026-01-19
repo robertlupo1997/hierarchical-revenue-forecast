@@ -39,6 +39,15 @@ type BatchPredictResponse struct {
 	LatencyMs   float64           `json:"latency_ms"`
 }
 
+// SimplePredictRequest represents a simplified prediction request without features.
+// Features are generated internally (currently as zeros, future: feature matrix lookup).
+type SimplePredictRequest struct {
+	StoreNbr int    `json:"store_nbr"`
+	Family   string `json:"family"`
+	Date     string `json:"date"`
+	Horizon  int    `json:"horizon"`
+}
+
 // Predict handles single prediction requests.
 func (h *Handlers) Predict(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
@@ -203,6 +212,101 @@ func (h *Handlers) PredictBatch(w http.ResponseWriter, r *http.Request) {
 	resp := BatchPredictResponse{
 		Predictions: responses,
 		LatencyMs:   float64(time.Since(start).Microseconds()) / 1000,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// PredictSimple handles simplified prediction requests without feature arrays.
+// It generates mock features (27 zeros) and delegates to the inference engine.
+// This endpoint is designed for dashboard use where features aren't available client-side.
+func (h *Handlers) PredictSimple(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	ctx := r.Context()
+
+	var req SimplePredictRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Validate request
+	if req.StoreNbr <= 0 {
+		http.Error(w, `{"error":"store_nbr must be positive"}`, http.StatusBadRequest)
+		return
+	}
+	if req.Family == "" {
+		http.Error(w, `{"error":"family is required"}`, http.StatusBadRequest)
+		return
+	}
+	if req.Date == "" {
+		http.Error(w, `{"error":"date is required"}`, http.StatusBadRequest)
+		return
+	}
+	// Validate horizon is one of the allowed values
+	validHorizons := map[int]bool{15: true, 30: true, 60: true, 90: true}
+	if !validHorizons[req.Horizon] {
+		http.Error(w, `{"error":"horizon must be 15, 30, 60, or 90"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Check cache first
+	cacheKey := cache.GenerateCacheKey(req.StoreNbr, req.Family, req.Date, req.Horizon)
+	if h.cache != nil {
+		if cached, err := h.cache.GetPrediction(ctx, cacheKey); err == nil {
+			resp := PredictResponse{
+				StoreNbr:   cached.StoreNbr,
+				Family:     cached.Family,
+				Date:       cached.Date,
+				Prediction: cached.Prediction,
+				Cached:     true,
+				LatencyMs:  float64(time.Since(start).Microseconds()) / 1000,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+			return
+		}
+	}
+
+	// Run inference with mock features (27 zeros for now)
+	// Future: Look up real features from preprocessed feature matrix
+	if h.onnx == nil {
+		http.Error(w, `{"error":"model not loaded"}`, http.StatusServiceUnavailable)
+		return
+	}
+
+	// Generate 27 zero features (placeholder until feature store is implemented)
+	features := make([]float32, 27)
+
+	prediction, err := h.onnx.Predict(features)
+	if err != nil {
+		log.Error().Err(err).Msg("inference failed")
+		http.Error(w, `{"error":"inference failed"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Cache result
+	if h.cache != nil {
+		result := &cache.PredictionResult{
+			StoreNbr:   req.StoreNbr,
+			Family:     req.Family,
+			Date:       req.Date,
+			Horizon:    req.Horizon,
+			Prediction: prediction,
+		}
+		if err := h.cache.SetPrediction(ctx, cacheKey, result); err != nil {
+			log.Warn().Err(err).Msg("failed to cache prediction")
+		}
+	}
+
+	resp := PredictResponse{
+		StoreNbr:   req.StoreNbr,
+		Family:     req.Family,
+		Date:       req.Date,
+		Prediction: prediction,
+		Cached:     false,
+		LatencyMs:  float64(time.Since(start).Microseconds()) / 1000,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
