@@ -16,16 +16,17 @@ MAX_ITERATIONS=${2:-50}
 ITERATION=0
 
 # Validate mode
-if [[ "$MODE" != "plan" && "$MODE" != "build" && "$MODE" != "fix" && "$MODE" != "redesign" && "$MODE" != "dashboard" && "$MODE" != "nextsteps" ]]; then
-    echo "Usage: ./loop.sh [plan|build|fix|redesign|dashboard|nextsteps] [max_iterations]"
+if [[ "$MODE" != "plan" && "$MODE" != "build" && "$MODE" != "fix" && "$MODE" != "redesign" && "$MODE" != "dashboard" && "$MODE" != "nextsteps" && "$MODE" != "production" ]]; then
+    echo "Usage: ./loop.sh [plan|build|fix|redesign|dashboard|nextsteps|production] [max_iterations]"
     echo ""
     echo "Modes:"
-    echo "  plan      - Analyze specs vs code, update IMPLEMENTATION_PLAN.md (no implementation)"
-    echo "  build     - Implement one task per iteration, run tests, commit"
-    echo "  fix       - Run pipeline, diagnose and fix errors until success"
-    echo "  redesign  - Redesign frontend UI with polished, professional look"
-    echo "  dashboard - Implement dashboard feature gaps (real data, horizon selector, etc.)"
-    echo "  nextsteps - Implement next steps (CI/CD, feature store, tests, export formats)"
+    echo "  plan       - Analyze specs vs code, update IMPLEMENTATION_PLAN.md (no implementation)"
+    echo "  build      - Implement one task per iteration, run tests, commit"
+    echo "  fix        - Run pipeline, diagnose and fix errors until success"
+    echo "  redesign   - Redesign frontend UI with polished, professional look"
+    echo "  dashboard  - Implement dashboard feature gaps (real data, horizon selector, etc.)"
+    echo "  nextsteps  - Implement next steps (CI/CD, feature store, tests, export formats)"
+    echo "  production - Production readiness (security, observability, testing, UX, docs)"
     exit 1
 fi
 
@@ -40,6 +41,8 @@ elif [[ "$MODE" == "dashboard" ]]; then
     PROMPT_FILE="PROMPT_dashboard.md"
 elif [[ "$MODE" == "nextsteps" ]]; then
     PROMPT_FILE="PROMPT_nextsteps.md"
+elif [[ "$MODE" == "production" ]]; then
+    PROMPT_FILE="PROMPT_production.md"
 else
     PROMPT_FILE="PROMPT_build.md"
 fi
@@ -121,6 +124,12 @@ while [ $ITERATION -lt $MAX_ITERATIONS ]; do
     if grep -q "NEXTSTEPS_COMPLETE" progress.md 2>/dev/null && [[ "$MODE" == "nextsteps" ]]; then
         echo ""
         echo "=== Next Steps Complete - All Enhancements Implemented ==="
+        exit 0
+    fi
+
+    if grep -q "PRODUCTION_COMPLETE" progress.md 2>/dev/null && [[ "$MODE" == "production" ]]; then
+        echo ""
+        echo "=== Production Readiness Complete - All Tasks Implemented ==="
         exit 0
     fi
 
