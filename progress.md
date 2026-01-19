@@ -387,7 +387,7 @@ NEXTSTEPS_COMPLETE
 
 ### Phase 1: Security & Production Hardening
 - [x] **1.1** API Key Authentication middleware
-- [ ] **1.2** CORS Restriction (whitelist origins)
+- [x] **1.2** CORS Restriction (whitelist origins)
 - [ ] **1.3** Rate Limiting (token bucket, 100 req/sec)
 - [ ] **1.4** Input Validation Enhancement
 - [ ] **1.5** Structured Error Responses
@@ -427,5 +427,16 @@ NEXTSTEPS_COMPLETE
   - Updated docker-compose.yml with MLRF_API_KEY env var
   - Updated dashboard api.ts to pass X-API-Key header
 
+- [x] **1.2** CORS Restriction (commit 449db9c)
+  - Created mlrf-api/internal/middleware/cors.go
+  - Configurable origin whitelist via CORS_ORIGINS env var
+  - Default origins: localhost:3000, localhost:4173, localhost:5173
+  - Validates Origin header against whitelist
+  - Rejects preflight from unknown origins with 403
+  - Adds Vary: Origin header for caching correctness
+  - Added 8 unit tests in cors_test.go
+  - Updated docker-compose.yml with MLRF_CORS_ORIGINS env var
+  - Note: Go not installed in WSL; run `go test ./internal/middleware/...` manually
+
 ### Current Task
-- [ ] **1.2** CORS Restriction - NEXT UP
+- [ ] **1.3** Rate Limiting - NEXT UP
