@@ -42,6 +42,7 @@ const mockHierarchy: HierarchyNode = {
   name: 'Total',
   level: 'total',
   prediction: 5250000,
+  trend_percent: 12.3,
   children: [
     {
       id: 'store_1',
@@ -127,21 +128,41 @@ function ThemeToggle() {
   );
 }
 
+// Helper to format currency values
+function formatCurrency(value: number): string {
+  if (value >= 1_000_000) {
+    return `$${(value / 1_000_000).toFixed(2)}M`;
+  }
+  if (value >= 1_000) {
+    return `$${(value / 1_000).toFixed(0)}K`;
+  }
+  return `$${value.toFixed(0)}`;
+}
+
+// Determine trend direction based on percentage (±1% threshold for "stable")
+function getTrendDirection(trendPercent: number): 'up' | 'down' | 'stable' {
+  if (trendPercent > 1) return 'up';
+  if (trendPercent < -1) return 'down';
+  return 'stable';
+}
+
 function StatCard({
   icon: Icon,
   label,
   value,
   subValue,
-  trend,
+  trendPercent,
   delay = 0,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   subValue?: string;
-  trend?: 'up' | 'down';
+  trendPercent?: number;
   delay?: number;
 }) {
+  const trend = trendPercent !== undefined ? getTrendDirection(trendPercent) : undefined;
+
   return (
     <div
       className={cn(
@@ -155,15 +176,15 @@ function StatCard({
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
           <Icon className="h-5 w-5" />
         </div>
-        {trend && (
+        {trend && trend !== 'stable' && (
           <span
             className={cn(
               'badge text-xs',
               trend === 'up' ? 'badge-success' : 'badge-destructive'
             )}
           >
-            {trend === 'up' ? '+' : '-'}
-            {trend === 'up' ? '12%' : '5%'}
+            {trendPercent !== undefined && trendPercent > 0 ? '+' : ''}
+            {trendPercent?.toFixed(1)}%
           </span>
         )}
       </div>
@@ -345,15 +366,15 @@ export function Dashboard() {
           <StatCard
             icon={TrendingUp}
             label="Total Forecast"
-            value="$5.25M"
+            value={formatCurrency(displayHierarchy.prediction)}
             subValue={`${horizon}-day projection`}
-            trend="up"
+            trendPercent={displayHierarchy.trend_percent}
             delay={0}
           />
           <StatCard
             icon={BarChart3}
             label="Active Stores"
-            value="54"
+            value={String(displayHierarchy.children?.length ?? 54)}
             subValue="Across all regions"
             delay={100}
           />
@@ -367,9 +388,8 @@ export function Dashboard() {
           <StatCard
             icon={Sparkles}
             label="Model Accuracy"
-            value="0.42"
+            value={displayMetrics[0]?.rmsle.toFixed(2) ?? '—'}
             subValue="RMSLE (lower is better)"
-            trend="up"
             delay={300}
           />
         </div>
