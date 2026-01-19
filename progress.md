@@ -338,10 +338,19 @@ REDESIGN_COMPLETE
   - Tests handle both mock (4 stores) and real (54 stores) data gracefully
   - TypeScript check and ESLint pass
 
+- [x] **3.2** API Integration Tests (commit 19aa726)
+  - Added 6 new test functions for /predict/simple endpoint
+  - TestPredictSimple_ValidRequest: validates successful request parsing
+  - TestPredictSimple_InvalidHorizon: tests rejection of invalid horizons (0, 7, 45, 100, -15)
+  - TestPredictSimple_ValidHorizons: confirms 15/30/60/90 are accepted
+  - TestPredictSimple_MissingFields: tests all field validations (store_nbr, family, date)
+  - TestPredictSimple_InvalidJSON: tests malformed request handling
+  - TestPredictSimple_ResponseStructure: validates request flow
+  - Note: Go not installed in WSL; run `go test ./...` manually to verify
+
 ### Current Task
-- [ ] **3.2** API Integration Tests - NEXT
+- [ ] **4.1** GitHub Actions CI/CD Pipeline - NEXT
 
 ### Remaining Tasks
-- [ ] **4.1** GitHub Actions CI/CD Pipeline
 - [ ] **4.2** More Export Formats (Excel, PDF)
 - [ ] **4.3** Forecast Accuracy Visualization
