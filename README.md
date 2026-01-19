@@ -51,7 +51,7 @@ mlrf-dashboard (TypeScript)   -> React + visx + shadcn/ui
 ### Example: Single Prediction
 
 ```bash
-curl -X POST http://localhost:8080/predict \
+curl -X POST http://localhost:8081/predict \
   -H "Content-Type: application/json" \
   -d '{
     "store_nbr": 1,
@@ -65,7 +65,7 @@ curl -X POST http://localhost:8080/predict \
 ### Example: SHAP Explanation
 
 ```bash
-curl -X POST http://localhost:8080/explain \
+curl -X POST http://localhost:8081/explain \
   -H "Content-Type: application/json" \
   -d '{
     "store_nbr": 1,
