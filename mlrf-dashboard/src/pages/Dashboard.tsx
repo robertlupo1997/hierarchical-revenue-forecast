@@ -13,6 +13,7 @@ import {
   Sparkles,
   AlertCircle,
   ArrowLeftRight,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 import { ShapWaterfall } from '../components/ShapWaterfall';
@@ -404,6 +405,20 @@ export function Dashboard() {
                 <span className="text-sm font-medium">Compare</span>
               </Link>
 
+              {/* Batch link */}
+              <Link
+                to="/batch"
+                className={cn(
+                  'flex h-9 items-center gap-2 rounded-lg px-3',
+                  'bg-secondary text-secondary-foreground',
+                  'transition-all duration-200',
+                  'hover:bg-secondary/80'
+                )}
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                <span className="text-sm font-medium">Batch</span>
+              </Link>
+
               {/* Refresh button */}
               <button
                 onClick={handleRefresh}
@@ -479,6 +494,20 @@ export function Dashboard() {
                 title="Compare stores"
               >
                 <ArrowLeftRight className="h-4 w-4" />
+              </Link>
+
+              {/* Batch link - icon only on mobile */}
+              <Link
+                to="/batch"
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-lg shrink-0',
+                  'bg-secondary text-secondary-foreground',
+                  'transition-all duration-200',
+                  'hover:bg-secondary/80'
+                )}
+                title="Batch predictions"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
               </Link>
 
               {/* Refresh button - icon only on mobile */}
