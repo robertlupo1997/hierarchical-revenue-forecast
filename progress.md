@@ -320,11 +320,19 @@ REDESIGN_COMPLETE
   - Updated docker-compose.yml to mount data volume
   - Added comprehensive unit tests (store_test.go)
 
+- [x] **2.2** Real Confidence Intervals from API (commit 4eed5b2)
+  - Added compute_prediction_intervals() to train.py using empirical residuals
+  - Saves prediction_intervals.json during model training (percentile method)
+  - Added PredictionIntervals struct and LoadPredictionIntervals() to Go API
+  - Added applyIntervals() to compute CI bounds (floors negative values at 0)
+  - PredictSimple returns lower_80, upper_80, lower_95, upper_95 fields
+  - Updated useForecastData hook to use API-provided intervals
+  - Falls back to approximate CIs if API intervals unavailable
+
 ### Current Task
-- [ ] **2.2** Real Confidence Intervals from API - NEXT
+- [ ] **3.1** E2E Tests for new dashboard features - NEXT
 
 ### Remaining Tasks
-- [ ] **3.1** E2E Tests for new dashboard features
 - [ ] **3.2** API Integration Tests
 - [ ] **4.1** GitHub Actions CI/CD Pipeline
 - [ ] **4.2** More Export Formats (Excel, PDF)
