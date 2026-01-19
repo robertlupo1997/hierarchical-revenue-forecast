@@ -380,3 +380,52 @@ REDESIGN_COMPLETE
 ### ALL NEXT STEPS COMPLETE
 
 NEXTSTEPS_COMPLETE
+
+---
+
+## Production Readiness Implementation
+
+### Phase 1: Security & Production Hardening
+- [x] **1.1** API Key Authentication middleware
+- [ ] **1.2** CORS Restriction (whitelist origins)
+- [ ] **1.3** Rate Limiting (token bucket, 100 req/sec)
+- [ ] **1.4** Input Validation Enhancement
+- [ ] **1.5** Structured Error Responses
+- [ ] **1.6** Kubernetes Deployment Manifests
+
+### Phase 2: Observability
+- [ ] **2.1** Prometheus Metrics Exporter
+- [ ] **2.2** Grafana Dashboard
+- [ ] **2.3** Distributed Tracing (OpenTelemetry)
+- [ ] **2.4** Alerting Rules
+
+### Phase 3: Testing
+- [ ] **3.1** React Component Unit Tests (Vitest)
+- [ ] **3.2** API Load Tests (k6)
+- [ ] **3.3** Failure Scenario Tests
+
+### Phase 4: UX Features
+- [ ] **4.1** What-If Analysis
+- [ ] **4.2** Store Comparison Mode
+- [ ] **4.3** Mobile Responsive Design
+- [ ] **4.4** Batch Prediction CSV Upload
+
+### Phase 5: Documentation
+- [ ] **5.1** Model Card
+- [ ] **5.2** API Error Documentation
+- [ ] **5.3** Architecture Decision Records (5 ADRs)
+- [ ] **5.4** Setup Guide
+
+### Completed Tasks
+- [x] **1.1** API Key Authentication middleware (commit c05148c)
+  - Created mlrf-api/internal/middleware/auth.go
+  - X-API-Key validation with header and query param support
+  - /health endpoint bypasses auth (always accessible)
+  - Dev mode: no auth when API_KEY not set
+  - Added 7 unit tests in auth_test.go
+  - Updated main.go with middleware and CORS header
+  - Updated docker-compose.yml with MLRF_API_KEY env var
+  - Updated dashboard api.ts to pass X-API-Key header
+
+### Current Task
+- [ ] **1.2** CORS Restriction - NEXT UP
