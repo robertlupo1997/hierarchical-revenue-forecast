@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { ChevronRight, Home, Layers, Store, Package, Box } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { ChevronRight, Home, Layers, Store, Package, Box, Search, X } from 'lucide-react';
 import type { HierarchyNode } from '../lib/api';
 import { cn, formatCurrency } from '../lib/utils';
 
@@ -17,10 +17,29 @@ const levelConfig: Record<string, { label: string; color: string; icon: React.El
 
 export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) {
   const [pathStack, setPathStack] = useState<HierarchyNode[]>([data]);
+  const [searchQuery, setSearchQuery] = useState('');
   const currentNode = pathStack[pathStack.length - 1];
+
+  // Filter children based on search query
+  const filteredChildren = useMemo(() => {
+    if (!currentNode.children) return [];
+    if (!searchQuery.trim()) return currentNode.children;
+
+    const query = searchQuery.toLowerCase();
+    return currentNode.children.filter(child =>
+      child.name.toLowerCase().includes(query) ||
+      child.id.toLowerCase().includes(query)
+    );
+  }, [currentNode.children, searchQuery]);
+
+  // Show search only at total level with many children (store level)
+  const showSearch = currentNode.level === 'total' &&
+    currentNode.children &&
+    currentNode.children.length > 10;
 
   const handleDrillDown = useCallback(
     (node: HierarchyNode) => {
+      setSearchQuery(''); // Clear search when drilling down
       if (node.children && node.children.length > 0) {
         setPathStack((prev) => [...prev, node]);
         onSelect?.(node);
@@ -33,6 +52,7 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
 
   const handleNavigate = useCallback(
     (index: number) => {
+      setSearchQuery(''); // Clear search when navigating
       setPathStack((prev) => prev.slice(0, index + 1));
       onSelect?.(pathStack[index]);
     },
@@ -127,10 +147,48 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
         </div>
       </div>
 
+      {/* Store Search */}
+      {showSearch && (
+        <div className="flex items-center gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search stores..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={cn(
+                'w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm',
+                'placeholder:text-muted-foreground/70',
+                'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
+                'transition-all duration-200'
+              )}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
+            {searchQuery ? (
+              <span>
+                {filteredChildren.length} of {currentNode.children?.length ?? 0} stores
+              </span>
+            ) : (
+              <span>{currentNode.children?.length ?? 0} stores</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Children Grid */}
-      {currentNode.children && currentNode.children.length > 0 && (
+      {filteredChildren.length > 0 && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {currentNode.children.map((child, index) => {
+          {filteredChildren.map((child, index) => {
             const childConfig = levelConfig[child.level] || levelConfig.total;
             const ChildIcon = childConfig.icon;
             const hasChildren = child.children && child.children.length > 0;
@@ -198,7 +256,30 @@ export function HierarchyDrilldown({ data, onSelect }: HierarchyDrilldownProps) 
         </div>
       )}
 
-      {/* Empty State */}
+      {/* No Search Results */}
+      {searchQuery && filteredChildren.length === 0 && currentNode.children && currentNode.children.length > 0 && (
+        <div className="rounded-xl border border-dashed border-border/60 p-10 text-center bg-muted/20">
+          <div className="flex justify-center mb-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Search className="h-6 w-6 text-muted-foreground" />
+            </div>
+          </div>
+          <p className="text-muted-foreground font-medium">
+            No stores match "{searchQuery}"
+          </p>
+          <p className="text-sm text-muted-foreground/70 mt-1">
+            Try a different search term
+          </p>
+          <button
+            onClick={() => setSearchQuery('')}
+            className="mt-4 text-sm text-primary hover:underline"
+          >
+            Clear search
+          </button>
+        </div>
+      )}
+
+      {/* Empty State - Lowest Level */}
       {(!currentNode.children || currentNode.children.length === 0) && (
         <div className="rounded-xl border border-dashed border-border/60 p-10 text-center bg-muted/20">
           <div className="flex justify-center mb-3">
