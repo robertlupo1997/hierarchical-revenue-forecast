@@ -401,7 +401,7 @@ NEXTSTEPS_COMPLETE
 
 ### Phase 3: Testing
 - [x] **3.1** React Component Unit Tests (Vitest)
-- [ ] **3.2** API Load Tests (k6)
+- [x] **3.2** API Load Tests (k6)
 - [ ] **3.3** Failure Scenario Tests
 
 ### Phase 4: UX Features
@@ -593,5 +593,27 @@ NEXTSTEPS_COMPLETE
   - TypeScript and ESLint checks pass
   - Run with: `cd mlrf-dashboard && bun run test` (or `npm test`)
 
+- [x] **3.2** API Load Tests (k6)
+  - Created mlrf-api/tests/load/ directory with comprehensive k6 load tests
+  - predict.js: Main load test script with multiple scenarios
+    - Steady load: Ramps from 0 → 25 → 50 → 100 VUs over 5 minutes
+    - Spike test: Sudden burst to 200 VUs to test resilience
+    - Tests /predict/simple, /predict/batch, and /hierarchy endpoints
+    - Thresholds: P95 < 100ms, P99 < 200ms, error rate < 1%
+    - Custom metrics: predict_latency, batch_latency, hierarchy_latency
+  - stress.js: Stress test to find API breaking point
+    - Ramps to 400 VUs to identify limits
+    - More lenient thresholds (10% error rate, 500ms P90)
+  - soak.js: Long-running stability test
+    - 50 VUs for 30 minutes (configurable with DURATION env var)
+    - Mixed workload: 70% single, 20% batch, 10% hierarchy
+    - Monitors for memory leaks and latency degradation
+  - README.md: Documentation for running load tests
+    - Installation instructions for k6
+    - Usage examples with environment variables
+    - CI integration guidance
+  - All scripts follow k6 best practices with setup/teardown functions
+  - Note: k6 not installed in WSL; run `k6 run predict.js` manually to verify
+
 ### Current Task
-- [ ] **3.2** API Load Tests (k6) - NEXT UP
+- [ ] **3.3** Failure Scenario Tests - NEXT UP
