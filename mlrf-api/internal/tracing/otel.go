@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
@@ -175,7 +176,7 @@ func RecordError(ctx context.Context, err error) {
 }
 
 // SetSpanStatus sets the status of the span in the context.
-func SetSpanStatus(ctx context.Context, code trace.StatusCode, description string) {
+func SetSpanStatus(ctx context.Context, code codes.Code, description string) {
 	span := trace.SpanFromContext(ctx)
 	span.SetStatus(code, description)
 }

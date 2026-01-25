@@ -29,9 +29,9 @@ type Store struct {
 
 // FeatureRow represents a row from the feature matrix parquet file.
 type FeatureRow struct {
-	StoreNbr int32  `parquet:"store_nbr"`
-	Family   string `parquet:"family"`
-	Date     string `parquet:"date"`
+	StoreNbr int32     `parquet:"store_nbr"`
+	Family   string    `parquet:"family"`
+	Date     time.Time `parquet:"date"`
 
 	// Numeric features
 	Year           int32   `parquet:"year"`
@@ -94,14 +94,14 @@ func (s *Store) Load(parquetPath string) error {
 	}
 	defer file.Close()
 
-	// Get file info for parquet reader
+	// Get file info for logging
 	stat, err := file.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to stat file: %w", err)
 	}
 
-	// Create parquet reader
-	reader := parquet.NewReader(file, parquet.NewSchema(new(FeatureRow)), parquet.ReadBufferSize(1<<20))
+	// Create parquet reader (schema inferred from FeatureRow struct tags)
+	reader := parquet.NewReader(file)
 	defer reader.Close()
 
 	s.mu.Lock()
@@ -119,8 +119,9 @@ func (s *Store) Load(parquetPath string) error {
 			break // End of file or error
 		}
 
-		// Build key
-		key := fmt.Sprintf("%d_%s_%s", row.StoreNbr, row.Family, row.Date)
+		// Build key (format date as YYYY-MM-DD)
+		dateStr := row.Date.Format("2006-01-02")
+		key := fmt.Sprintf("%d_%s_%s", row.StoreNbr, row.Family, dateStr)
 		aggKey := fmt.Sprintf("%d_%s", row.StoreNbr, row.Family)
 
 		// Extract features as float32 array
