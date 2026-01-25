@@ -11,7 +11,6 @@ import {
   BarChart3,
   GitBranch,
   Sparkles,
-  AlertCircle,
   ArrowLeftRight,
   FileSpreadsheet,
 } from 'lucide-react';
@@ -42,6 +41,7 @@ import {
   HierarchySkeleton,
   ModelComparisonSkeleton,
 } from '../components/Skeleton';
+import { DemoBanner } from '../components/DemoBanner';
 
 // Mock data for initial development (used when API is unavailable)
 const mockModels: ModelMetric[] = [
@@ -527,15 +527,11 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Mock data warning */}
-          {isUsingMockData && (
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm text-warning">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>Using demo data. Connect API for live data.</span>
-            </div>
-          )}
         </div>
       </header>
+
+      {/* Demo mode banner - shown when using mock data */}
+      <DemoBanner isDemo={isUsingMockData} />
 
       {/* Main content */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

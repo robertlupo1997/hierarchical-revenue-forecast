@@ -74,6 +74,46 @@ curl -X POST http://localhost:8081/explain \
   }'
 ```
 
+## API Error Responses
+
+All API endpoints return structured error responses:
+
+```json
+{
+  "error": "Human-readable error message",
+  "code": "ERROR_CODE",
+  "details": {}
+}
+```
+
+### Error Codes
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `AUTH_REQUIRED` | 401 | API key missing or invalid |
+| `INVALID_REQUEST` | 400 | Malformed request body or missing fields |
+| `INVALID_STORE` | 400 | Store number out of range (1-54) |
+| `INVALID_FAMILY` | 400 | Unknown product family |
+| `INVALID_DATE` | 400 | Date format error or out of range |
+| `INVALID_HORIZON` | 400 | Horizon must be 15, 30, 60, or 90 days |
+| `MODEL_UNAVAILABLE` | 503 | ONNX model not loaded |
+| `INFERENCE_FAILED` | 500 | Model prediction error |
+| `PARSE_ERROR` | 400 | JSON parsing failed |
+
+### Example Error Response
+
+```bash
+curl -X POST http://localhost:8081/predict/simple \
+  -H "Content-Type: application/json" \
+  -d '{"store_nbr": 999, "family": "GROCERY I", "date": "2017-01-01", "horizon": 30}'
+
+# Response (400 Bad Request):
+{
+  "error": "store_nbr must be between 1 and 54",
+  "code": "INVALID_STORE"
+}
+```
+
 ## Development
 
 ### Python (mlrf-data, mlrf-ml)

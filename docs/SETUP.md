@@ -441,6 +441,58 @@ docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 # - Jaeger: http://localhost:16686
 ```
 
+### Changing Grafana Credentials
+
+The default Grafana credentials are `admin/admin`. For security, change these before exposing Grafana externally.
+
+#### Method 1: Via Grafana UI
+
+1. Log in to Grafana at http://localhost:3001 with `admin/admin`
+2. On first login, you'll be prompted to change the password
+3. Enter a new secure password
+
+#### Method 2: Via Environment Variables
+
+Set credentials before starting the container:
+
+```bash
+# In docker-compose.monitoring.yml or docker-compose.yml
+services:
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_USER=your_username
+      - GF_SECURITY_ADMIN_PASSWORD=your_secure_password
+```
+
+Or use a `.env` file:
+
+```bash
+# .env
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD=your_secure_password
+```
+
+Then reference in docker-compose:
+
+```yaml
+services:
+  grafana:
+    env_file:
+      - .env
+```
+
+#### Method 3: Disable Default Admin Login
+
+For production, disable the default admin:
+
+```bash
+environment:
+  - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=true
+  - GF_AUTH_ANONYMOUS_ENABLED=false
+```
+
+Then configure an external auth provider (LDAP, OAuth, etc.).
+
 ### Quality Gates
 
 Edit `quality_gates.yaml` to adjust thresholds:

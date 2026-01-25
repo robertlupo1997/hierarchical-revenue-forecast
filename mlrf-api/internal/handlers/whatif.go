@@ -44,10 +44,20 @@ var whatIfFeatureIndex = map[string]int{
 	"sales_lag_14":    10, // Sales lag 14 days
 	"sales_lag_28":    11, // Sales lag 28 days
 	"sales_lag_90":    12, // Sales lag 90 days
-	"rolling_mean_7":  13, // 7-day rolling mean
-	"rolling_mean_28": 14, // 28-day rolling mean
-	"rolling_std_7":   15, // 7-day rolling std
-	"rolling_std_28":  16, // 28-day rolling std
+	"rolling_mean_7":       13, // 7-day rolling mean
+	"rolling_mean_28":      14, // 28-day rolling mean
+	"rolling_std_7":        15, // 7-day rolling std
+	"rolling_std_28":       16, // 28-day rolling std
+	"day_of_year":          17, // Day of year (1-366)
+	"is_mid_month":         18, // Is mid-month (binary)
+	"is_leap_year":         19, // Is leap year (binary)
+	"sales_rolling_mean_14": 20, // 14-day rolling mean
+	"sales_rolling_mean_90": 21, // 90-day rolling mean
+	"sales_rolling_std_14":  22, // 14-day rolling std
+	"sales_rolling_std_90":  23, // 90-day rolling std
+	"cluster":              24, // Store cluster
+	"family_encoded":       25, // Encoded product family
+	"type_encoded":         26, // Encoded store type
 }
 
 // WhatIf handles what-if analysis requests.
