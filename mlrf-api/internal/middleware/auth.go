@@ -31,11 +31,8 @@ func APIKeyAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Check for API key in header first, then query parameter
+		// Check for API key in header only (query params are logged and insecure)
 		key := r.Header.Get("X-API-Key")
-		if key == "" {
-			key = r.URL.Query().Get("api_key")
-		}
 
 		// Validate API key
 		if key != apiKey {

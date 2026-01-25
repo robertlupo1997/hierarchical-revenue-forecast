@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/rs/zerolog/log"
 )
 
 // ExplainRequest represents a SHAP explanation request.
@@ -28,6 +30,7 @@ type ExplainResponse struct {
 	BaseValue  float64            `json:"base_value"`
 	Features   []WaterfallFeature `json:"features"`
 	Prediction float64            `json:"prediction"`
+	IsMock     bool               `json:"is_mock,omitempty"`
 }
 
 // Explain returns SHAP waterfall data for a prediction.
@@ -60,7 +63,9 @@ func (h *Handlers) Explain(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Return a mock response if SHAP data not available
 		// This allows the API to work without pre-computed SHAP values
+		log.Warn().Err(err).Str("file", shapFile).Msg("SHAP data file not found, returning mock explanation")
 		mockResp := createMockExplanation(req.StoreNbr, req.Family)
+		mockResp.IsMock = true
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(mockResp)
 		return
@@ -77,7 +82,9 @@ func (h *Handlers) Explain(w http.ResponseWriter, r *http.Request) {
 	resp, ok := shapData[key]
 	if !ok {
 		// Return mock if specific combination not found
+		log.Warn().Str("key", key).Msg("SHAP data not found for store/family combination, returning mock explanation")
 		mockResp := createMockExplanation(req.StoreNbr, req.Family)
+		mockResp.IsMock = true
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(mockResp)
 		return

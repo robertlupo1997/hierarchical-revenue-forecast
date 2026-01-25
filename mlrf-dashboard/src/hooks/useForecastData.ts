@@ -69,8 +69,7 @@ export function useForecastData(options: UseForecastDataOptions): ForecastDataRe
               success: true,
             };
           } catch (error) {
-            // If API fails, return null prediction
-            console.warn(`Failed to fetch prediction for ${dateStr}:`, error);
+            // If API fails, return null prediction (error captured in return object)
             return {
               date: dateStr,
               prediction: null as number | null,
