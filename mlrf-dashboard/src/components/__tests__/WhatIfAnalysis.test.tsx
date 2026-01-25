@@ -203,7 +203,15 @@ describe('WhatIfAnalysis', () => {
 
   it('shows loading state while analyzing', async () => {
     // Make the mock hang to simulate loading
-    let resolvePromise: (value: unknown) => void;
+    let resolvePromise: ((value: {
+      original: number;
+      adjusted: number;
+      delta: number;
+      delta_pct: number;
+      latency_ms: number;
+      applied: Record<string, number>;
+    }) => void) | undefined;
+
     mockFetchWhatIf.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -222,14 +230,16 @@ describe('WhatIfAnalysis', () => {
     });
 
     // Clean up by resolving the promise
-    resolvePromise!({
-      original: 1000,
-      adjusted: 1100,
-      delta: 100,
-      delta_pct: 10,
-      latency_ms: 5,
-      applied: {},
-    });
+    if (resolvePromise) {
+      resolvePromise({
+        original: 1000,
+        adjusted: 1100,
+        delta: 100,
+        delta_pct: 10,
+        latency_ms: 5,
+        applied: {},
+      });
+    }
   });
 
   it('displays positive delta with success color', async () => {
