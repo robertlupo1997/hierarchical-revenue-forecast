@@ -170,6 +170,7 @@ func main() {
 	r.Get("/model-metrics", h.ModelMetrics)
 	r.Get("/accuracy", h.Accuracy)
 	r.Post("/whatif", h.WhatIf)
+	r.Post("/historical", h.Historical)
 	r.Handle("/metrics/prometheus", promhttp.Handler())
 
 	// Start server

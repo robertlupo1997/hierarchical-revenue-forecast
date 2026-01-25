@@ -36,6 +36,12 @@ import {
 } from '../lib/api';
 import { cn } from '../lib/utils';
 import { exportData, type ExportFormat } from '../lib/export';
+import {
+  ChartSkeleton,
+  WaterfallSkeleton,
+  HierarchySkeleton,
+  ModelComparisonSkeleton,
+} from '../components/Skeleton';
 
 // Mock data for initial development (used when API is unavailable)
 const mockModels: ModelMetric[] = [
@@ -132,15 +138,6 @@ const mockAccuracySummary: AccuracySummary = {
   correlation: 0.95,
 };
 
-function LoadingSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn('space-y-3', className)}>
-      <div className="skeleton h-4 w-3/4" />
-      <div className="skeleton h-4 w-1/2" />
-      <div className="skeleton h-32 w-full" />
-    </div>
-  );
-}
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -602,7 +599,7 @@ export function Dashboard() {
             </div>
 
             {explanationLoading ? (
-              <LoadingSkeleton className="h-64" />
+              <WaterfallSkeleton />
             ) : explanationError ? (
               <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
@@ -633,7 +630,7 @@ export function Dashboard() {
           {/* Model Comparison */}
           <div className="card p-6 animate-fade-in-up animation-delay-200">
             {metricsLoading ? (
-              <LoadingSkeleton className="h-64" />
+              <ModelComparisonSkeleton />
             ) : (
               <ModelComparison data={displayMetrics} />
             )}
@@ -652,7 +649,7 @@ export function Dashboard() {
           {/* Forecast Chart */}
           <div className="card p-6 lg:col-span-2 animate-fade-in-up animation-delay-300">
             {forecastLoading ? (
-              <LoadingSkeleton className="h-64" />
+              <ChartSkeleton />
             ) : (
               <ForecastChart
                 data={displayForecast}
@@ -667,7 +664,7 @@ export function Dashboard() {
           {/* Accuracy Chart */}
           <div className="card p-6 lg:col-span-2 animate-fade-in-up animation-delay-350">
             {accuracyLoading ? (
-              <LoadingSkeleton className="h-64" />
+              <ChartSkeleton />
             ) : (
               <AccuracyChart
                 data={displayAccuracyData}
@@ -690,7 +687,7 @@ export function Dashboard() {
               </div>
             </div>
             {hierarchyLoading ? (
-              <LoadingSkeleton className="h-64" />
+              <HierarchySkeleton />
             ) : (
               <HierarchyDrilldown
                 data={displayHierarchy}

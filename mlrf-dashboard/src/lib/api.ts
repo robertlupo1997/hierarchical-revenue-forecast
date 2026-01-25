@@ -113,6 +113,23 @@ export interface WhatIfResponse {
   applied: Record<string, number>;
 }
 
+export interface HistoricalRequest {
+  store_nbr: number;
+  family: string;
+  end_date: string;
+  days: number;
+}
+
+export interface HistoricalPoint {
+  date: string;
+  actual: number;
+}
+
+export interface HistoricalResponse {
+  data: HistoricalPoint[];
+  is_mock?: boolean;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -206,6 +223,13 @@ class ApiClient {
       body: JSON.stringify(request),
     });
   }
+
+  async getHistorical(request: HistoricalRequest): Promise<HistoricalResponse> {
+    return this.fetch<HistoricalResponse>('/historical', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
 }
 
 export const apiClient = new ApiClient();
@@ -262,5 +286,19 @@ export async function fetchWhatIf(
     date,
     horizon,
     adjustments,
+  });
+}
+
+export async function fetchHistorical(
+  storeNbr: number,
+  family: string,
+  endDate: string,
+  days: number
+): Promise<HistoricalResponse> {
+  return apiClient.getHistorical({
+    store_nbr: storeNbr,
+    family,
+    end_date: endDate,
+    days,
   });
 }

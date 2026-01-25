@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { addDays, format, subDays } from 'date-fns';
-import { fetchSimplePrediction } from '../lib/api';
+import { addDays, format } from 'date-fns';
+import { fetchSimplePrediction, fetchHistorical } from '../lib/api';
 import type { ForecastDataPoint } from '../components/ForecastChart';
 
 interface UseForecastDataOptions {
@@ -120,20 +120,36 @@ export function useForecastData(options: UseForecastDataOptions): ForecastDataRe
         }
       }
 
-      // Add some historical "actual" points before the forecast start
-      // These are placeholder values to show historical context
-      // In a real system, these would come from actual historical data
+      // Fetch real historical data from the API
       const historicalDays = 28; // 4 weeks of history
-      for (let i = historicalDays; i > 0; i -= 7) {
-        const histDate = subDays(start, i);
-        // Use first forecast prediction as base for generating fake historical data
+      try {
+        const historicalResponse = await fetchHistorical(
+          storeNbr,
+          family,
+          startDate,
+          historicalDays
+        );
+
+        // Add historical points to the beginning
+        for (const point of historicalResponse.data) {
+          points.unshift({
+            date: point.date,
+            actual: point.actual,
+          });
+        }
+      } catch {
+        // If historical API fails, generate fallback data based on predictions
         const basePrediction = predictions[0]?.prediction ?? 45000;
-        // Add some random variation to make it look realistic
-        const variation = 1 + (Math.sin(i * 0.5) * 0.1);
-        points.unshift({
-          date: format(histDate, 'yyyy-MM-dd'),
-          actual: basePrediction * variation,
-        });
+        for (let i = historicalDays; i > 0; i -= 7) {
+          const histDate = new Date(startDate);
+          histDate.setDate(histDate.getDate() - i);
+          // Simple variation without sine wave
+          const variation = 1 + ((i % 14) - 7) * 0.02;
+          points.unshift({
+            date: format(histDate, 'yyyy-MM-dd'),
+            actual: basePrediction * variation,
+          });
+        }
       }
 
       return points.sort((a, b) => a.date.localeCompare(b.date));
