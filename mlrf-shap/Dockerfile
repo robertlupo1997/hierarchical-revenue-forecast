@@ -8,12 +8,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install dependencies first (for better caching)
+# Copy source code and pyproject.toml
 COPY pyproject.toml .
-RUN pip install --no-cache-dir -e .
-
-# Copy source code
 COPY src/ src/
+
+# Install the package
+RUN pip install --no-cache-dir .
 
 EXPOSE 50051
 
