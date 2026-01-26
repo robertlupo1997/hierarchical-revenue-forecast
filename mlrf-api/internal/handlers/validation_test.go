@@ -252,7 +252,7 @@ func TestValidateBatchSize(t *testing.T) {
 // Handler-level validation tests
 
 func TestPredict_InvalidDate(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -290,7 +290,7 @@ func TestPredict_InvalidDate(t *testing.T) {
 }
 
 func TestPredict_InvalidFamily(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name   string
@@ -327,7 +327,7 @@ func TestPredict_InvalidFamily(t *testing.T) {
 }
 
 func TestPredict_InvalidFeatureLength(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name     string
@@ -364,7 +364,7 @@ func TestPredict_InvalidFeatureLength(t *testing.T) {
 }
 
 func TestPredictBatch_ExceedsMaxSize(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	// Create 101 predictions (exceeds max of 100)
 	predictions := make([]map[string]interface{}, 101)
@@ -396,7 +396,7 @@ func TestPredictBatch_ExceedsMaxSize(t *testing.T) {
 }
 
 func TestPredictBatch_ValidMaxSize(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	// Create exactly 100 predictions (at the limit)
 	predictions := make([]map[string]interface{}, 100)
@@ -425,7 +425,7 @@ func TestPredictBatch_ValidMaxSize(t *testing.T) {
 }
 
 func TestPredictBatch_InvalidPredictionInBatch(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	// Create batch with one invalid prediction in the middle
 	predictions := []map[string]interface{}{
@@ -468,7 +468,7 @@ func TestPredictBatch_InvalidPredictionInBatch(t *testing.T) {
 }
 
 func TestPredictSimple_InvalidDate(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name string
@@ -505,7 +505,7 @@ func TestPredictSimple_InvalidDate(t *testing.T) {
 }
 
 func TestPredictSimple_InvalidFamily(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	payload := map[string]interface{}{
 		"store_nbr": 1,

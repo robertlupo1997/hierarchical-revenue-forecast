@@ -11,7 +11,7 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
@@ -33,7 +33,7 @@ func TestHealth(t *testing.T) {
 }
 
 func TestPredictInvalidRequest(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	// Test with empty body
 	req := httptest.NewRequest(http.MethodPost, "/predict", bytes.NewReader([]byte("{}")))
@@ -47,7 +47,7 @@ func TestPredictInvalidRequest(t *testing.T) {
 }
 
 func TestPredictMissingFields(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name    string
@@ -73,8 +73,9 @@ func TestPredictMissingFields(t *testing.T) {
 	}
 }
 
-func TestExplainWithMockData(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+func TestExplainWithoutShapService(t *testing.T) {
+	// Without SHAP service, Explain should return 503
+	h := NewHandlers(nil, nil, nil, nil)
 
 	payload := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01"}`
 	req := httptest.NewRequest(http.MethodPost, "/explain", bytes.NewReader([]byte(payload)))
@@ -82,54 +83,47 @@ func TestExplainWithMockData(t *testing.T) {
 
 	h.Explain(w, req)
 
-	// Should return mock data when SHAP file not found
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status 200, got %d", w.Code)
+	// Should return 503 when SHAP service unavailable (no mocks!)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("expected status 503, got %d", w.Code)
 	}
 
-	var resp ExplainResponse
+	var resp ErrorResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
 
-	if resp.BaseValue == 0 {
-		t.Error("expected non-zero base value")
-	}
-
-	if len(resp.Features) == 0 {
-		t.Error("expected features in response")
+	if resp.Code != CodeFeatureStoreUnavailable && resp.Code != CodeShapUnavailable {
+		t.Errorf("expected FEATURE_STORE_UNAVAILABLE or SHAP_UNAVAILABLE, got %s", resp.Code)
 	}
 }
 
-func TestHierarchyMockData(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+func TestHierarchyWithoutData(t *testing.T) {
+	// Without hierarchy data file, Hierarchy should return 503
+	h := NewHandlers(nil, nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/hierarchy?date=2017-08-01", nil)
 	w := httptest.NewRecorder()
 
 	h.Hierarchy(w, req)
 
-	// Should return mock data when hierarchy file not found
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status 200, got %d", w.Code)
+	// Should return 503 when hierarchy data unavailable (no mocks!)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("expected status 503, got %d", w.Code)
 	}
 
-	var resp HierarchyNode
+	var resp ErrorResponse
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
 
-	if resp.Level != "total" {
-		t.Errorf("expected level 'total', got '%s'", resp.Level)
-	}
-
-	if len(resp.Children) == 0 {
-		t.Error("expected children in hierarchy")
+	if resp.Code != CodeHierarchyUnavailable {
+		t.Errorf("expected HIERARCHY_UNAVAILABLE, got %s", resp.Code)
 	}
 }
 
 func TestMetrics(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
 	w := httptest.NewRecorder()
@@ -146,7 +140,7 @@ func TestMetrics(t *testing.T) {
 func TestPredictSimple_ValidRequest(t *testing.T) {
 	// Create a handler without ONNX model - should return service unavailable
 	// This tests the validation logic before model inference
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	body := `{"store_nbr": 1, "family": "GROCERY I", "date": "2017-08-01", "horizon": 30}`
 	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
@@ -163,7 +157,7 @@ func TestPredictSimple_ValidRequest(t *testing.T) {
 }
 
 func TestPredictSimple_InvalidHorizon(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name    string
@@ -203,7 +197,7 @@ func TestPredictSimple_InvalidHorizon(t *testing.T) {
 }
 
 func TestPredictSimple_ValidHorizons(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	validHorizons := []int{15, 30, 60, 90}
 
@@ -231,7 +225,7 @@ func TestPredictSimple_ValidHorizons(t *testing.T) {
 }
 
 func TestPredictSimple_MissingFields(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name          string
@@ -295,7 +289,7 @@ func TestPredictSimple_MissingFields(t *testing.T) {
 }
 
 func TestPredictSimple_InvalidJSON(t *testing.T) {
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	testCases := []struct {
 		name    string
@@ -331,7 +325,7 @@ func TestPredictSimple_ResponseStructure(t *testing.T) {
 	// all expected fields are present in the JSON structure.
 	// Since we don't have a real model, we can only test the request validation path.
 
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	body := `{"store_nbr": 1, "family": "GROCERY I", "date": "2017-08-01", "horizon": 30}`
 	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
@@ -391,7 +385,7 @@ func (m *MockInferencer) CallCount() int {
 // TestPredictWithoutONNX verifies the API returns a proper error when ONNX model is unavailable.
 // This tests graceful degradation - the API should return 503 Service Unavailable, not crash.
 func TestPredictWithoutONNX(t *testing.T) {
-	h := NewHandlers(nil, nil, nil) // No ONNX model
+	h := NewHandlers(nil, nil, nil, nil) // No ONNX model
 
 	testCases := []struct {
 		name     string
@@ -457,7 +451,7 @@ func TestPredictWithoutONNX(t *testing.T) {
 // Predictions should succeed without caching.
 func TestPredictWithoutRedis(t *testing.T) {
 	mockOnnx := &MockInferencer{prediction: 1234.56}
-	h := NewHandlers(mockOnnx, nil, nil) // No Redis cache
+	h := NewHandlers(mockOnnx, nil, nil, nil) // No Redis cache
 
 	t.Run("/predict works without Redis", func(t *testing.T) {
 		body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}`
@@ -515,7 +509,7 @@ func TestPredictWithoutRedis(t *testing.T) {
 // TestBatchPredictWithoutRedis verifies batch predictions work when Redis is unavailable.
 func TestBatchPredictWithoutRedis(t *testing.T) {
 	mockOnnx := &MockInferencer{prediction: 999.99}
-	h := NewHandlers(mockOnnx, nil, nil) // No Redis cache
+	h := NewHandlers(mockOnnx, nil, nil, nil) // No Redis cache
 
 	body := `{"predictions":[
 		{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
@@ -555,7 +549,7 @@ func TestBatchPredictWithoutRedis(t *testing.T) {
 // This tests the /predict/simple endpoint which relies on the feature store.
 func TestPredictWithoutFeatureStore(t *testing.T) {
 	mockOnnx := &MockInferencer{prediction: 555.55}
-	h := NewHandlers(mockOnnx, nil, nil) // No feature store
+	h := NewHandlers(mockOnnx, nil, nil, nil) // No feature store
 
 	body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":60}`
 	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
@@ -588,7 +582,7 @@ func TestPredictWithoutFeatureStore(t *testing.T) {
 func TestPredictSimpleWithAllDependencies(t *testing.T) {
 	mockOnnx := &MockInferencer{prediction: 2000.0}
 	// Note: We don't have a mock cache or feature store, so we test without them
-	h := NewHandlers(mockOnnx, nil, nil)
+	h := NewHandlers(mockOnnx, nil, nil, nil)
 
 	body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":90}`
 	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
@@ -627,7 +621,7 @@ func TestPredictSimpleWithAllDependencies(t *testing.T) {
 // TestInferenceFailure verifies proper error handling when inference fails.
 func TestInferenceFailure(t *testing.T) {
 	mockOnnx := &MockInferencer{err: fmt.Errorf("simulated inference failure")}
-	h := NewHandlers(mockOnnx, nil, nil)
+	h := NewHandlers(mockOnnx, nil, nil, nil)
 
 	body := `{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","horizon":30}`
 	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
@@ -653,7 +647,7 @@ func TestInferenceFailure(t *testing.T) {
 // TestBatchInferenceFailure verifies proper error handling when batch inference fails.
 func TestBatchInferenceFailure(t *testing.T) {
 	mockOnnx := &MockInferencer{err: fmt.Errorf("batch inference failure")}
-	h := NewHandlers(mockOnnx, nil, nil)
+	h := NewHandlers(mockOnnx, nil, nil, nil)
 
 	body := `{"predictions":[
 		{"store_nbr":1,"family":"GROCERY I","date":"2017-08-01","features":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}
@@ -681,7 +675,7 @@ func TestBatchInferenceFailure(t *testing.T) {
 // TestConcurrentPredictions verifies the API handles concurrent requests safely.
 func TestConcurrentPredictions(t *testing.T) {
 	mockOnnx := &MockInferencer{prediction: 42.0}
-	h := NewHandlers(mockOnnx, nil, nil)
+	h := NewHandlers(mockOnnx, nil, nil, nil)
 
 	numRequests := 50
 	done := make(chan bool, numRequests)

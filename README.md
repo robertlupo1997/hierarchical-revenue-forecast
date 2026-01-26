@@ -30,6 +30,7 @@ open http://localhost:3000
 ```
 mlrf-data (Python/Polars)     -> Data ingestion, feature engineering, hierarchy
 mlrf-ml (Python)              -> Model training, reconciliation, SHAP, ONNX export
+mlrf-shap (Python)            -> Real-time SHAP computation sidecar
 mlrf-api (Go)                 -> ONNX inference, Redis cache, REST API
 mlrf-dashboard (TypeScript)   -> React + visx + shadcn/ui
 ```
@@ -45,8 +46,9 @@ mlrf-dashboard (TypeScript)   -> React + visx + shadcn/ui
 | `/health` | GET | Health check |
 | `/predict` | POST | Single prediction with caching |
 | `/predict/batch` | POST | Batch predictions |
-| `/explain` | POST | SHAP waterfall data |
+| `/explain` | POST | Real-time SHAP waterfall data |
 | `/hierarchy` | GET | Full hierarchy tree with predictions |
+| `/admin/reload-features` | POST | Hot-reload feature store (requires admin key) |
 
 ### Example: Single Prediction
 
@@ -99,6 +101,11 @@ All API endpoints return structured error responses:
 | `MODEL_UNAVAILABLE` | 503 | ONNX model not loaded |
 | `INFERENCE_FAILED` | 500 | Model prediction error |
 | `PARSE_ERROR` | 400 | JSON parsing failed |
+| `SHAP_UNAVAILABLE` | 503 | SHAP service not connected |
+| `SHAP_ERROR` | 500 | SHAP computation failed |
+| `FEATURE_STORE_UNAVAILABLE` | 503 | Feature store not loaded |
+| `HIERARCHY_UNAVAILABLE` | 503 | Hierarchy data not available |
+| `RELOAD_FAILED` | 500 | Feature store reload failed |
 
 ### Example Error Response
 

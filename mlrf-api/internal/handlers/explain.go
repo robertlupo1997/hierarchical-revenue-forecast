@@ -30,12 +30,11 @@ type ExplainResponse struct {
 	BaseValue  float64            `json:"base_value"`
 	Features   []WaterfallFeature `json:"features"`
 	Prediction float64            `json:"prediction"`
-	IsMock     bool               `json:"is_mock,omitempty"`
 }
 
-// Explain returns SHAP waterfall data for a prediction.
-// For now, serves pre-computed SHAP values from JSON file.
-// In production, could compute on-demand or use a Python sidecar.
+// Explain returns REAL SHAP waterfall data computed on-demand.
+// This calls the Python SHAP sidecar for actual SHAP computation.
+// No mocks, no pre-computed fallbacks - if SHAP service is unavailable, returns error.
 func (h *Handlers) Explain(w http.ResponseWriter, r *http.Request) {
 	var req ExplainRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -53,74 +52,65 @@ func (h *Handlers) Explain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load pre-computed SHAP data
-	shapFile := os.Getenv("SHAP_DATA_PATH")
-	if shapFile == "" {
-		shapFile = "models/shap_data.json"
+	// Check if feature store is available
+	if h.featureStore == nil || !h.featureStore.IsLoaded() {
+		WriteServiceUnavailable(w, r, "feature store not available", CodeFeatureStoreUnavailable)
+		return
 	}
 
-	data, err := os.ReadFile(shapFile)
+	// Get features for this prediction
+	features, found := h.featureStore.GetFeatures(req.StoreNbr, req.Family, req.Date)
+	if !found {
+		log.Warn().
+			Int("store", req.StoreNbr).
+			Str("family", req.Family).
+			Str("date", req.Date).
+			Msg("Features not found, using aggregated/zero features")
+	}
+
+	// Check if SHAP client is available
+	if h.shapClient == nil {
+		WriteServiceUnavailable(w, r, "SHAP service not available", CodeShapUnavailable)
+		return
+	}
+
+	// Call SHAP sidecar for real-time computation
+	ctx := r.Context()
+	shapResp, err := h.shapClient.Explain(ctx, req.StoreNbr, req.Family, req.Date, features)
 	if err != nil {
-		// Return a mock response if SHAP data not available
-		// This allows the API to work without pre-computed SHAP values
-		log.Warn().Err(err).Str("file", shapFile).Msg("SHAP data file not found, returning mock explanation")
-		mockResp := createMockExplanation(req.StoreNbr, req.Family)
-		mockResp.IsMock = true
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(mockResp)
+		log.Error().Err(err).
+			Int("store", req.StoreNbr).
+			Str("family", req.Family).
+			Msg("SHAP computation failed")
+		WriteInternalError(w, r, "SHAP computation failed: "+err.Error(), CodeShapError)
 		return
 	}
 
-	var shapData map[string]ExplainResponse
-	if err := json.Unmarshal(data, &shapData); err != nil {
-		WriteInternalError(w, r, "failed to parse SHAP data", CodeParseError)
-		return
+	// Convert client response to handler response
+	resp := ExplainResponse{
+		BaseValue:  shapResp.BaseValue,
+		Prediction: shapResp.Prediction,
+		Features:   make([]WaterfallFeature, len(shapResp.Features)),
+	}
+	for i, f := range shapResp.Features {
+		resp.Features[i] = WaterfallFeature{
+			Name:       f.Name,
+			Value:      f.Value,
+			ShapValue:  f.ShapValue,
+			Cumulative: f.Cumulative,
+			Direction:  f.Direction,
+		}
 	}
 
-	// Look up by store_family key
-	key := fmt.Sprintf("%d_%s", req.StoreNbr, req.Family)
-	resp, ok := shapData[key]
-	if !ok {
-		// Return mock if specific combination not found
-		log.Warn().Str("key", key).Msg("SHAP data not found for store/family combination, returning mock explanation")
-		mockResp := createMockExplanation(req.StoreNbr, req.Family)
-		mockResp.IsMock = true
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(mockResp)
-		return
-	}
+	log.Debug().
+		Int("store", req.StoreNbr).
+		Str("family", req.Family).
+		Float64("prediction", resp.Prediction).
+		Int("features", len(resp.Features)).
+		Msg("SHAP explanation computed")
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
-}
-
-// createMockExplanation creates a mock SHAP explanation for demo purposes.
-func createMockExplanation(storeNbr int, family string) ExplainResponse {
-	baseValue := 1000.0
-	cumulative := baseValue
-
-	features := []WaterfallFeature{
-		{Name: "sales_lag_7", Value: 1234.5, ShapValue: 250.0, Direction: "positive"},
-		{Name: "oil_price", Value: 65.3, ShapValue: -120.0, Direction: "negative"},
-		{Name: "is_holiday", Value: 1.0, ShapValue: 80.0, Direction: "positive"},
-		{Name: "dayofweek", Value: 5.0, ShapValue: 45.0, Direction: "positive"},
-		{Name: "sales_rolling_mean_7", Value: 1100.0, ShapValue: 150.0, Direction: "positive"},
-		{Name: "promo_rolling_7", Value: 3.0, ShapValue: 35.0, Direction: "positive"},
-		{Name: "cluster", Value: 2.0, ShapValue: -25.0, Direction: "negative"},
-		{Name: "month", Value: 8.0, ShapValue: 60.0, Direction: "positive"},
-	}
-
-	// Calculate cumulative values
-	for i := range features {
-		cumulative += features[i].ShapValue
-		features[i].Cumulative = cumulative
-	}
-
-	return ExplainResponse{
-		BaseValue:  baseValue,
-		Features:   features,
-		Prediction: cumulative,
-	}
 }
 
 // HierarchyNode represents a node in the forecast hierarchy.
@@ -136,13 +126,14 @@ type HierarchyNode struct {
 }
 
 // Hierarchy returns the full hierarchy tree with predictions.
+// Requires pre-computed hierarchy data - returns error if unavailable.
 func (h *Handlers) Hierarchy(w http.ResponseWriter, r *http.Request) {
 	date := r.URL.Query().Get("date")
 	if date == "" {
 		date = "2017-08-01"
 	}
 
-	// Load pre-computed hierarchy or generate mock
+	// Load hierarchy data from file (must exist, no mocks)
 	hierarchyFile := os.Getenv("HIERARCHY_DATA_PATH")
 	if hierarchyFile == "" {
 		hierarchyFile = "models/hierarchy_data.json"
@@ -150,10 +141,8 @@ func (h *Handlers) Hierarchy(w http.ResponseWriter, r *http.Request) {
 
 	data, err := os.ReadFile(hierarchyFile)
 	if err != nil {
-		// Return mock hierarchy
-		mockHierarchy := createMockHierarchy()
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(mockHierarchy)
+		log.Error().Err(err).Str("file", hierarchyFile).Msg("Hierarchy data file not found")
+		WriteServiceUnavailable(w, r, "hierarchy data not available", CodeHierarchyUnavailable)
 		return
 	}
 
@@ -199,51 +188,14 @@ func addTrendToNode(node *HierarchyNode, variationFactor float64) {
 	}
 }
 
-// createMockHierarchy creates a mock hierarchy for demo purposes.
-func createMockHierarchy() HierarchyNode {
-	// Sample stores
-	stores := []HierarchyNode{
-		{ID: "1", Name: "Store 1", Level: "store", Prediction: 125000.0},
-		{ID: "2", Name: "Store 2", Level: "store", Prediction: 98000.0},
-		{ID: "3", Name: "Store 3", Level: "store", Prediction: 156000.0},
-		{ID: "4", Name: "Store 4", Level: "store", Prediction: 87000.0},
-		{ID: "5", Name: "Store 5", Level: "store", Prediction: 112000.0},
+// GenerateHierarchyData generates hierarchy data from feature store.
+// This can be called to create the hierarchy_data.json file.
+func (h *Handlers) GenerateHierarchyData() (*HierarchyNode, error) {
+	if h.featureStore == nil || !h.featureStore.IsLoaded() {
+		return nil, fmt.Errorf("feature store not loaded")
 	}
 
-	// Add sample families to each store
-	families := []string{"GROCERY I", "BEVERAGES", "PRODUCE", "CLEANING", "DAIRY"}
-	for i := range stores {
-		stores[i].Children = make([]HierarchyNode, len(families))
-		storeTotal := 0.0
-		for j, family := range families {
-			pred := stores[i].Prediction / float64(len(families)) * (0.8 + float64(j)*0.1)
-			stores[i].Children[j] = HierarchyNode{
-				ID:         fmt.Sprintf("%s_%s", stores[i].ID, family),
-				Name:       family,
-				Level:      "family",
-				Prediction: pred,
-			}
-			storeTotal += pred
-		}
-		stores[i].Prediction = storeTotal
-	}
-
-	// Calculate total
-	var total float64
-	for _, store := range stores {
-		total += store.Prediction
-	}
-
-	root := HierarchyNode{
-		ID:         "total",
-		Name:       "Total",
-		Level:      "total",
-		Prediction: total,
-		Children:   stores,
-	}
-
-	// Add trend data to all nodes (12% positive trend at root, varying for children)
-	addTrendToNode(&root, 0.12)
-
-	return root
+	// This would need to aggregate predictions from the feature store
+	// For now, return an error indicating this needs to be generated from ML pipeline
+	return nil, fmt.Errorf("hierarchy data must be generated from ML training pipeline")
 }

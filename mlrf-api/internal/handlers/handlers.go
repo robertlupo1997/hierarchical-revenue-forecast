@@ -8,6 +8,7 @@ import (
 	"github.com/mlrf/mlrf-api/internal/cache"
 	"github.com/mlrf/mlrf-api/internal/features"
 	"github.com/mlrf/mlrf-api/internal/inference"
+	"github.com/mlrf/mlrf-api/internal/shapclient"
 	"github.com/rs/zerolog/log"
 )
 
@@ -17,6 +18,7 @@ type Handlers struct {
 	cache        *cache.RedisCache
 	featureStore *features.Store
 	intervals    *PredictionIntervals
+	shapClient   *shapclient.Client
 }
 
 // NewHandlers creates a new Handlers instance.
@@ -24,12 +26,14 @@ type Handlers struct {
 // - onnx: ONNX inference engine (nil returns 503 Service Unavailable)
 // - cache: Redis cache (nil = no caching, predictions still work)
 // - featureStore: Feature lookup (nil = uses zero features)
-func NewHandlers(onnx inference.Inferencer, c *cache.RedisCache, fs *features.Store) *Handlers {
+// - shapClient: SHAP service client (nil returns 503 for /explain)
+func NewHandlers(onnx inference.Inferencer, c *cache.RedisCache, fs *features.Store, sc *shapclient.Client) *Handlers {
 	return &Handlers{
 		onnx:         onnx,
 		cache:        c,
 		featureStore: fs,
 		intervals:    nil,
+		shapClient:   sc,
 	}
 }
 

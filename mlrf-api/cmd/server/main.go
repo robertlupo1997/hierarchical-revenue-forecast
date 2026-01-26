@@ -20,6 +20,7 @@ import (
 	"github.com/mlrf/mlrf-api/internal/handlers"
 	"github.com/mlrf/mlrf-api/internal/inference"
 	mlrfmiddleware "github.com/mlrf/mlrf-api/internal/middleware"
+	"github.com/mlrf/mlrf-api/internal/shapclient"
 	"github.com/mlrf/mlrf-api/internal/tracing"
 )
 
@@ -47,6 +48,11 @@ func main() {
 	featurePath := os.Getenv("FEATURE_PATH")
 	if featurePath == "" {
 		featurePath = "data/features/feature_matrix.parquet"
+	}
+
+	shapServiceAddr := os.Getenv("SHAP_SERVICE_ADDR")
+	if shapServiceAddr == "" {
+		shapServiceAddr = "localhost:50051"
 	}
 
 	// Initialize ONNX Runtime
@@ -99,6 +105,17 @@ func main() {
 		log.Warn().Str("path", featurePath).Msg("Feature file not found, using zero features")
 	}
 
+	// Initialize SHAP client (connects to Python sidecar for real SHAP computation)
+	var shapClient *shapclient.Client
+	shapClient, err = shapclient.NewClient(shapServiceAddr, 500*time.Millisecond)
+	if err != nil {
+		log.Warn().Err(err).Str("addr", shapServiceAddr).Msg("SHAP service unavailable, /explain endpoint will return 503")
+		shapClient = nil
+	} else {
+		log.Info().Str("addr", shapServiceAddr).Msg("SHAP service connected")
+		defer shapClient.Close()
+	}
+
 	// Initialize OpenTelemetry tracing
 	tracingCfg := tracing.DefaultConfig()
 	tracerProvider, err := tracing.NewTracerProvider(tracingCfg)
@@ -115,7 +132,7 @@ func main() {
 	}
 
 	// Create handlers
-	h := handlers.NewHandlers(onnxSession, redisCache, featureStore)
+	h := handlers.NewHandlers(onnxSession, redisCache, featureStore, shapClient)
 
 	// Load prediction intervals for confidence bands
 	intervalsPath := os.Getenv("INTERVALS_PATH")
@@ -172,6 +189,9 @@ func main() {
 	r.Post("/whatif", h.WhatIf)
 	r.Post("/historical", h.Historical)
 	r.Handle("/metrics/prometheus", promhttp.Handler())
+
+	// Admin routes (protected by ADMIN_API_KEY)
+	r.Post("/admin/reload-features", h.ReloadFeatures)
 
 	// Start server
 	srv := &http.Server{

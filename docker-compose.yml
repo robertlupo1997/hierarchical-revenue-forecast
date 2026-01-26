@@ -12,6 +12,22 @@ services:
       retries: 3
     restart: unless-stopped
 
+  shap:
+    build: ./mlrf-shap
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./models:/models:ro
+    environment:
+      - LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:50051/health')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+
   api:
     build: ./mlrf-api
     ports:
@@ -21,6 +37,8 @@ services:
       - PORT=8081
       - MODEL_PATH=/app/models/lightgbm_model.onnx
       - FEATURE_PATH=/app/data/features/feature_matrix.parquet
+      - SHAP_SERVICE_ADDR=shap:50051
+      - ADMIN_API_KEY=${MLRF_ADMIN_API_KEY:-}
       - API_KEY=${MLRF_API_KEY:-}
       - CORS_ORIGINS=${MLRF_CORS_ORIGINS:-http://localhost:3000}
       - RATE_LIMIT_RPS=${MLRF_RATE_LIMIT_RPS:-100}
@@ -31,6 +49,8 @@ services:
       - OTEL_SERVICE_NAME=mlrf-api
     depends_on:
       redis:
+        condition: service_healthy
+      shap:
         condition: service_healthy
     volumes:
       - ./models:/app/models:ro

@@ -1,0 +1,21 @@
+# Generated proto files
+src/mlrf_shap/shap_pb2.py
+src/mlrf_shap/shap_pb2_grpc.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp

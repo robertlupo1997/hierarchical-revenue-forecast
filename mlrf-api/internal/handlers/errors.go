@@ -41,6 +41,19 @@ const (
 	CodeInferenceFailed  = "INFERENCE_FAILED"
 	CodeInternalError    = "INTERNAL_ERROR"
 	CodeParseError       = "PARSE_ERROR"
+
+	// SHAP Service Errors
+	CodeShapUnavailable = "SHAP_UNAVAILABLE"
+	CodeShapError       = "SHAP_ERROR"
+
+	// Feature Store Errors
+	CodeFeatureStoreUnavailable = "FEATURE_STORE_UNAVAILABLE"
+	CodeFeatureNotFound         = "FEATURE_NOT_FOUND"
+	CodeFeatureStoreStale       = "FEATURE_STORE_STALE"
+	CodeReloadFailed            = "RELOAD_FAILED"
+
+	// Hierarchy Errors
+	CodeHierarchyUnavailable = "HIERARCHY_UNAVAILABLE"
 )
 
 // WriteError writes a standardized JSON error response.

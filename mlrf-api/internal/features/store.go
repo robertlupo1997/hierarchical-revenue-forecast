@@ -15,6 +15,20 @@ import (
 // NumFeatures is the number of features expected by the model.
 const NumFeatures = 27
 
+// DefaultStalenessThreshold is the default max age before features are considered stale.
+var DefaultStalenessThreshold = 24 * time.Hour
+
+// Metadata tracks feature store freshness and provenance.
+type Metadata struct {
+	LoadedAt    time.Time `json:"loaded_at"`
+	FileModTime time.Time `json:"file_mod_time"`
+	FilePath    string    `json:"file_path"`
+	RowCount    int       `json:"row_count"`
+	DataDateMin string    `json:"data_date_min"`
+	DataDateMax string    `json:"data_date_max"`
+	Version     string    `json:"version"`
+}
+
 // Store provides fast feature lookup by (store_nbr, family, date).
 type Store struct {
 	// index maps "storeNbr_family_date" -> feature vector
@@ -22,6 +36,12 @@ type Store struct {
 
 	// aggregated maps "storeNbr_family" -> average feature vector (fallback)
 	aggregated map[string][]float32
+
+	// metadata tracks freshness information
+	metadata Metadata
+
+	// stalenessThreshold defines how old data can be before considered stale
+	stalenessThreshold time.Duration
 
 	mu     sync.RWMutex
 	loaded bool
@@ -68,14 +88,22 @@ type FeatureRow struct {
 // NewStore creates a new feature store from a parquet file.
 func NewStore(parquetPath string) (*Store, error) {
 	s := &Store{
-		index:      make(map[string][]float32),
-		aggregated: make(map[string][]float32),
+		index:              make(map[string][]float32),
+		aggregated:         make(map[string][]float32),
+		stalenessThreshold: DefaultStalenessThreshold,
 	}
 
 	if err := s.Load(parquetPath); err != nil {
 		return nil, err
 	}
 	return s, nil
+}
+
+// SetStalenessThreshold sets a custom staleness threshold.
+func (s *Store) SetStalenessThreshold(d time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.stalenessThreshold = d
 }
 
 // Load reads the parquet file and builds the in-memory index.
@@ -94,7 +122,7 @@ func (s *Store) Load(parquetPath string) error {
 	}
 	defer file.Close()
 
-	// Get file info for logging
+	// Get file info for logging and metadata
 	stat, err := file.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to stat file: %w", err)
@@ -107,9 +135,17 @@ func (s *Store) Load(parquetPath string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Clear existing data for reload
+	s.index = make(map[string][]float32)
+	s.aggregated = make(map[string][]float32)
+
 	// Track aggregation data for fallback
 	aggSum := make(map[string][]float64)
 	aggCount := make(map[string]int)
+
+	// Track date range for metadata
+	var minDate, maxDate time.Time
+	firstRow := true
 
 	rowCount := 0
 	for {
@@ -117,6 +153,20 @@ func (s *Store) Load(parquetPath string) error {
 		err := reader.Read(&row)
 		if err != nil {
 			break // End of file or error
+		}
+
+		// Track date range
+		if firstRow {
+			minDate = row.Date
+			maxDate = row.Date
+			firstRow = false
+		} else {
+			if row.Date.Before(minDate) {
+				minDate = row.Date
+			}
+			if row.Date.After(maxDate) {
+				maxDate = row.Date
+			}
 		}
 
 		// Build key (format date as YYYY-MM-DD)
@@ -153,12 +203,24 @@ func (s *Store) Load(parquetPath string) error {
 		s.aggregated[key] = avg
 	}
 
+	// Update metadata
+	s.metadata = Metadata{
+		LoadedAt:    time.Now(),
+		FileModTime: stat.ModTime(),
+		FilePath:    parquetPath,
+		RowCount:    rowCount,
+		DataDateMin: minDate.Format("2006-01-02"),
+		DataDateMax: maxDate.Format("2006-01-02"),
+		Version:     fmt.Sprintf("%d", stat.ModTime().Unix()),
+	}
+
 	s.loaded = true
 	log.Info().
 		Int("rows", rowCount).
 		Int("indexed", len(s.index)).
 		Int("aggregated", len(s.aggregated)).
 		Int64("file_size_mb", stat.Size()/(1024*1024)).
+		Str("data_range", fmt.Sprintf("%s to %s", s.metadata.DataDateMin, s.metadata.DataDateMax)).
 		Dur("duration", time.Since(start)).
 		Msg("Feature store loaded")
 
@@ -273,4 +335,52 @@ func CacheKey(storeNbr int, family, date string) string {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, h)
 	return fmt.Sprintf("feat:%x", b)
+}
+
+// GetMetadata returns the current metadata for the feature store.
+func (s *Store) GetMetadata() Metadata {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.metadata
+}
+
+// IsFresh returns true if features were loaded within the staleness threshold.
+func (s *Store) IsFresh() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if !s.loaded {
+		return false
+	}
+	return time.Since(s.metadata.LoadedAt) < s.stalenessThreshold
+}
+
+// Age returns how long ago features were loaded.
+func (s *Store) Age() time.Duration {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if !s.loaded {
+		return 0
+	}
+	return time.Since(s.metadata.LoadedAt)
+}
+
+// DataAge returns how old the newest data point is.
+func (s *Store) DataAge() time.Duration {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if !s.loaded || s.metadata.DataDateMax == "" {
+		return 0
+	}
+	maxDate, err := time.Parse("2006-01-02", s.metadata.DataDateMax)
+	if err != nil {
+		return 0
+	}
+	return time.Since(maxDate)
+}
+
+// FilePath returns the path to the loaded feature file.
+func (s *Store) FilePath() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.metadata.FilePath
 }

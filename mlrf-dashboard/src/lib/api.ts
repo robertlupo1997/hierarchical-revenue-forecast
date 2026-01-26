@@ -127,7 +127,6 @@ export interface HistoricalPoint {
 
 export interface HistoricalResponse {
   data: HistoricalPoint[];
-  is_mock?: boolean;
 }
 
 class ApiClient {

@@ -279,7 +279,7 @@ func TestErrorCodesAreDefined(t *testing.T) {
 
 func TestPredictErrorResponseStructure(t *testing.T) {
 	// Test that Predict handler returns proper structured errors
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/predict", nil)
 	w := httptest.NewRecorder()
@@ -306,7 +306,7 @@ func TestPredictErrorResponseStructure(t *testing.T) {
 
 func TestExplainErrorResponseStructure(t *testing.T) {
 	// Test that Explain handler returns proper structured errors
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/explain", nil)
 	w := httptest.NewRecorder()
@@ -333,7 +333,7 @@ func TestExplainErrorResponseStructure(t *testing.T) {
 
 func TestPredictSimpleModelUnavailableError(t *testing.T) {
 	// Test that PredictSimple returns proper error when model is unavailable
-	h := NewHandlers(nil, nil, nil)
+	h := NewHandlers(nil, nil, nil, nil)
 
 	body := `{"store_nbr": 1, "family": "GROCERY I", "date": "2017-08-01", "horizon": 30}`
 	req := httptest.NewRequest(http.MethodPost, "/predict/simple", bytes.NewReader([]byte(body)))
