@@ -2,6 +2,7 @@ package features
 
 import (
 	"testing"
+	"time"
 )
 
 func TestGetFeaturesWithNoData(t *testing.T) {
@@ -127,7 +128,7 @@ func TestRowToFeatures(t *testing.T) {
 	row := &FeatureRow{
 		StoreNbr:       1,
 		Family:         "GROCERY I",
-		Date:           "2017-08-01",
+		Date:           time.Date(2017, 8, 1, 0, 0, 0, 0, time.UTC),
 		Year:           2017,
 		Month:          8,
 		Day:            1,

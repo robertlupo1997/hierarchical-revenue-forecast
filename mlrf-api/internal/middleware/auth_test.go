@@ -73,7 +73,11 @@ func TestAPIKeyAuth_ValidKeyInHeader(t *testing.T) {
 	}
 }
 
-func TestAPIKeyAuth_ValidKeyInQueryParam(t *testing.T) {
+func TestAPIKeyAuth_QueryParamNotAccepted(t *testing.T) {
+	// Query params are intentionally NOT supported for security reasons:
+	// - They appear in server access logs
+	// - They're stored in browser history
+	// - They can leak via referrer headers
 	os.Setenv("API_KEY", "test-secret-key")
 	defer os.Unsetenv("API_KEY")
 
@@ -84,13 +88,14 @@ func TestAPIKeyAuth_ValidKeyInQueryParam(t *testing.T) {
 
 	wrappedHandler := APIKeyAuth(handler)
 
+	// API key in query param should be rejected - must use header
 	req := httptest.NewRequest("GET", "/predict?api_key=test-secret-key", nil)
 	rec := httptest.NewRecorder()
 
 	wrappedHandler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Errorf("expected status 200, got %d", rec.Code)
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401 (query params not accepted), got %d", rec.Code)
 	}
 }
 
@@ -149,7 +154,7 @@ func TestAPIKeyAuth_MissingKey(t *testing.T) {
 	}
 }
 
-func TestAPIKeyAuth_HeaderTakesPrecedenceOverQuery(t *testing.T) {
+func TestAPIKeyAuth_HeaderOnlyChecked(t *testing.T) {
 	os.Setenv("API_KEY", "test-secret-key")
 	defer os.Unsetenv("API_KEY")
 
@@ -159,7 +164,7 @@ func TestAPIKeyAuth_HeaderTakesPrecedenceOverQuery(t *testing.T) {
 
 	wrappedHandler := APIKeyAuth(handler)
 
-	// Valid key in header, invalid in query - should succeed
+	// Only header is checked - query param is completely ignored (for security)
 	req := httptest.NewRequest("GET", "/predict?api_key=wrong-key", nil)
 	req.Header.Set("X-API-Key", "test-secret-key")
 	rec := httptest.NewRecorder()
