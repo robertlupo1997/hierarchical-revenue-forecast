@@ -45,3 +45,14 @@ thoughts/
 
 # Windows reserved names
 nul
+
+# AI workflow artifacts
+PROMPT_*.md
+CLAUDE.md
+AGENTS.md
+progress.md
+IMPLEMENTATION_PLAN.md
+ROADMAP.md
+quality_gates.yaml
+loop.sh
+*.log
