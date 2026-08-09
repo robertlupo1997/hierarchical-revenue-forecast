@@ -8,9 +8,15 @@ Accepted
 
 2026-01-15
 
+> **Note on evidence.** This ADR records a decision and its rationale. It previously reported
+> speed and memory measurements that no benchmark script, input snapshot, hardware description, or
+> timing artifact in this repository substantiates. Those numbers have been removed rather than
+> softened. Benchmark against a defined pandas baseline before quoting any ratio.
+
 ## Context
 
-The MLRF system processes the Kaggle Store Sales dataset with 2.8 million rows (54 stores × 33 product families × ~1,400 days). Data processing tasks include:
+The MLRF system processes the Kaggle Store Sales dataset (54 stores × 33 product families over the
+competition's date range). Data processing tasks include:
 
 - Loading and joining multiple CSV files (train, oil prices, holidays, stores)
 - Creating lag features (1, 7, 14, 28, 90 days) per store-family combination
@@ -22,7 +28,7 @@ Pandas is the dominant Python DataFrame library but has known performance limita
 
 ### Requirements
 
-1. Process 2.8M+ rows efficiently
+1. Process the full multi-year dataset efficiently
 2. Handle grouped operations (lag, rolling) across 1,782 series
 3. Integrate with Parquet for efficient storage
 4. Maintain developer productivity with familiar DataFrame semantics
@@ -33,26 +39,35 @@ We chose **Polars** over Pandas for all data processing in the `mlrf-data` packa
 
 ### Key factors
 
-1. **Performance**: Polars is Rust-backed with Apache Arrow memory format. Benchmarks show 10-80x speedup on grouped operations vs Pandas. For our 2.8M row dataset, feature engineering completes in ~15 seconds vs ~3 minutes with Pandas.
+1. **Performance expectation**: Polars is Rust-backed and uses the Apache Arrow memory format. The
+   project's published benchmarks report large speedups on grouped operations relative to Pandas.
+   We did not measure this on our own dataset.
 
-2. **Lazy evaluation**: Polars supports lazy query plans that optimize the entire computation graph before execution, reducing memory allocations and enabling predicate pushdown.
+2. **Lazy evaluation**: Polars supports lazy query plans that optimize the computation graph before
+   execution, enabling optimizations such as predicate pushdown.
 
-3. **Parallel execution**: All Polars operations automatically parallelize across CPU cores without GIL limitations. Grouped operations (`.over()`) scale linearly with cores.
+3. **Parallel execution**: Polars executes many operations across multiple threads without the GIL.
+   We did not measure how our grouped operations scale with core count.
 
-4. **Memory efficiency**: Arrow columnar format has ~5x lower memory footprint than Pandas for mixed-type DataFrames. Critical for CI environments with limited RAM.
+4. **Memory expectation**: the Arrow columnar format is more compact than Pandas' object storage for
+   mixed-type DataFrames. We did not profile memory for this pipeline.
 
-5. **Native Parquet support**: Zero-copy reads/writes to Parquet format, enabling efficient data exchange with the ML pipeline.
+5. **Native Parquet support**: Polars reads and writes Parquet directly, which is the exchange
+   format with the ML pipeline.
 
-6. **API similarity**: Polars expression syntax (`df.with_columns(pl.col("x").shift(1).over("group"))`) is learnable by Pandas users in hours.
+6. **API**: Polars expression syntax (`df.with_columns(pl.col("x").shift(1).over("group"))`)
+   expresses the grouped lag and rolling operations this pipeline needs.
 
 ## Consequences
 
 ### Positive
 
-- **80x faster lag/rolling computations**: Feature matrix generation dropped from 3+ minutes to 15 seconds
-- **Lower memory usage**: Processing completes with 4GB RAM vs 16GB required by Pandas
-- **Simpler code**: Polars `.over()` eliminates explicit groupby-transform patterns
-- **Future-proof**: Polars is actively developed with growing ecosystem
+- **Concise grouped operations**: Polars `.over()` expresses per-series lag and rolling features
+  without explicit groupby-transform patterns
+- **Active development**: Polars is actively maintained with a growing ecosystem
+
+Speed and memory outcomes are unmeasured for this pipeline and are therefore not listed as
+consequences.
 
 ### Negative
 
@@ -62,9 +77,10 @@ We chose **Polars** over Pandas for all data processing in the `mlrf-data` packa
 
 ### Mitigations
 
-- ML libraries (LightGBM, SHAP) accept NumPy arrays, avoiding Pandas dependency
-- Created utility functions wrapping common Polars patterns
-- Internal documentation covers Polars idioms used in codebase
+- The Pandas boundary was not avoided: `mlrf-ml` declares pandas as a dependency, and
+  `prepare_features` converts Polars data to pandas before LightGBM training. Polars is used in the
+  data package; pandas is used at the model boundary.
+- Internal documentation covers the Polars idioms used in the codebase
 
 ## References
 

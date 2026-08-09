@@ -2,7 +2,12 @@
 
 ## Status
 
-Accepted
+Accepted as a decision, **not implemented in the pipeline.** The reconciliation functions exist as
+standalone utilities in `mlrf-ml/src/mlrf_ml/reconciliation.py`. The training pipeline's hierarchy
+step only counts stores, families, and series; it never imports or calls `reconcile_forecasts`. The
+API's `/hierarchy` endpoint reads a precomputed JSON file whose generator uses historical mean sales
+rather than model forecasts. No reconciled forecast is produced or persisted anywhere in this
+repository, and no accuracy or timing figure below has been measured.
 
 ## Date
 
@@ -10,7 +15,7 @@ Accepted
 
 ## Context
 
-The MLRF system forecasts sales across a three-level hierarchy:
+The MLRF system is intended to forecast sales across a hierarchy of:
 
 ```
 Total (1 series)
@@ -60,7 +65,9 @@ We chose **MinTrace with shrinkage estimation** (`mint_shrink`) from the Nixtla 
 
 4. **Nixtla ecosystem integration**: Works seamlessly with `statsforecast` and `mlforecast` for consistent API across the ML pipeline.
 
-5. **Benchmarked performance**: MinTrace shrinkage improves RMSLE by 3-8% over bottom-up in our validation, with the largest gains at the Total and Store levels.
+5. **Expected accuracy benefit**: the hierarchical-forecasting literature reports accuracy gains for
+   MinTrace over bottom-up. **We have not measured this.** No reconciliation experiment, metric, or
+   comparison result exists in this repository.
 
 ### Implementation
 
@@ -103,24 +110,27 @@ S = [1  1  1  ... 1  1]      # Total = sum of all bottom
 
 ### Positive
 
-- **Guaranteed coherence**: All reconciled forecasts sum correctly by construction
-- **3-8% RMSLE improvement**: MinTrace shrinkage outperforms naive methods
-- **Valid intervals**: Reconciled intervals maintain coverage properties
-- **No R runtime**: Pure Python deployment in Docker
-- **Method comparison**: Can evaluate multiple reconciliation strategies and pick best
+- **Guaranteed coherence**: reconciled forecasts sum correctly by construction
+- **No R runtime**: pure Python deployment in Docker
+- **Method comparison is possible**: the utilities can evaluate several reconciliation strategies,
+  though no such evaluation has been run
+
+Accuracy improvement is not listed as a consequence, because it has not been measured. Interval
+coherence is not claimed either: the reconciliation utility operates on point forecasts only, and
+neither interval reconciliation nor coverage validation is implemented.
 
 ### Negative
 
-- **Computational cost**: MinTrace requires O(n²) covariance estimation for n series. With 1,782 series, this adds ~30 seconds to training.
-- **Memory usage**: Full covariance matrix is 1,782 × 1,782 floats (~25MB). Manageable but notable.
-- **Black box**: Reconciliation weights are not directly interpretable
+- **Computational cost**: MinTrace requires O(n²) covariance estimation for n series. Its runtime
+  has not been measured here, because the training pipeline does not run it.
+- **Memory usage**: a full 1,782 × 1,782 covariance matrix is on the order of tens of MB.
+- **Black box**: reconciliation weights are not directly interpretable
 
 ### Mitigations
 
-- Reconciliation runs once during training, not at inference time
-- Pre-reconciled forecasts cached in Parquet
-- Summing matrix and tags saved for debugging
-- Comparison with BottomUp provides interpretable baseline
+- Reconciliation is intended to run once during training rather than at inference time
+- Summing matrix and tags are saved for debugging
+- Comparison with BottomUp would provide an interpretable baseline
 
 ## References
 

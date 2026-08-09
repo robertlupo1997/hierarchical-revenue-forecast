@@ -8,9 +8,13 @@ Accepted
 
 2026-01-15
 
+> **Note on evidence.** The latency, memory, and startup figures previously reported here were not
+> measured: no Go-versus-Python benchmark, memory profile, or startup timing artifact exists in this
+> repository. They have been removed. The requirements below are targets, not achievements.
+
 ## Context
 
-The MLRF system requires a production inference service to serve predictions with the following requirements:
+The MLRF system requires an inference service to serve predictions against the following targets:
 
 - **Low latency**: P95 < 50ms, P99 < 100ms for single predictions
 - **High throughput**: Support 1000+ requests/second
@@ -22,9 +26,10 @@ The trained LightGBM model is exported to ONNX format for portable inference.
 
 ### Options Considered
 
-1. **Python (FastAPI/Flask)**: Native LightGBM/ONNX support, but GIL limits concurrency. P95 ~50-100ms.
-2. **Go + ONNX Runtime**: Excellent concurrency, low memory, sub-10ms inference. Requires CGO bindings.
-3. **Rust + ONNX Runtime**: Fastest option, but smaller talent pool and longer development time.
+1. **Python (FastAPI/Flask)**: Native LightGBM/ONNX support, but the GIL limits concurrency.
+2. **Go + ONNX Runtime**: Good concurrency and low memory footprint. Requires CGO bindings.
+3. **Rust + ONNX Runtime**: Likely the fastest option, but a smaller talent pool and longer
+   development time.
 4. **TensorFlow Serving / TorchServe**: Overkill for single model, complex deployment.
 
 ## Decision
@@ -33,17 +38,26 @@ We chose **Go with ONNX Runtime** via the `onnxruntime_go` bindings for the infe
 
 ### Key factors
 
-1. **Sub-10ms inference latency**: Go's efficient runtime combined with ONNX Runtime's optimized inference achieves P95 < 10ms for single predictions, well under our 50ms target.
+1. **Inference latency**: ONNX Runtime provides optimized inference and Go adds little runtime
+   overhead. Actual latency for this model has not been measured.
 
-2. **Goroutine concurrency**: Go's lightweight goroutines handle thousands of concurrent requests without Python's GIL bottleneck. Each request gets isolated execution context.
+2. **Goroutine concurrency**: Go handles many concurrent HTTP requests without Python's GIL
+   bottleneck. Note that ONNX inference itself is **not** concurrent here: every prediction takes
+   the same session-wide mutex for the duration of the call, so inference is serialized through one
+   session.
 
-3. **Pre-allocated tensors**: We pre-allocate input/output tensors at startup and reuse them with mutex protection, eliminating per-request allocation overhead.
+3. **Pre-allocated tensors**: We pre-allocate input/output tensors at startup and reuse them under
+   that mutex, avoiding per-request allocation.
 
-4. **Memory efficiency**: Go service runs at ~50MB RSS vs ~500MB for equivalent Python service. Critical for containerized deployments with multiple replicas.
+4. **Memory footprint**: a Go service is expected to use less resident memory than an equivalent
+   Python service. This has not been profiled here.
 
-5. **Static binary deployment**: Single binary deployment simplifies Docker images and reduces cold start time to ~100ms.
+5. **Deployment shape**: a Go binary plus the ONNX model file and a matching ONNX Runtime shared
+   library. This is not a static binary: the build enables CGO and the runtime image installs
+   `libonnxruntime.so`, which the server loads explicitly.
 
-6. **Production-grade HTTP**: Go's `net/http` package is battle-tested for production services with built-in support for middleware, graceful shutdown, and context cancellation.
+6. **Standard-library HTTP**: Go's `net/http` supports middleware, graceful shutdown, and context
+   cancellation, all of which this server uses.
 
 ### Implementation Details
 
@@ -68,11 +82,12 @@ func (s *ONNXSession) Predict(features []float32) (float32, error) {
 
 ### Positive
 
-- **P95 latency ~8ms**: 5x better than Python baseline, exceeds requirements
-- **Linear scaling**: Throughput scales linearly with CPU cores via goroutines
-- **Simple deployment**: Static binary + ONNX model file, no runtime dependencies
-- **Low resource usage**: 50MB memory per replica enables dense packing
 - **Type safety**: Go's type system catches prediction API errors at compile time
+- **Simple deployment unit**: one binary, the ONNX model, and the ONNX Runtime shared library
+
+Latency, throughput scaling, and memory consequences are unmeasured and so are not claimed. Note
+also that request throughput cannot scale linearly with cores while inference is serialized by the
+session mutex, and that `PredictBatch` is a loop over that same serialized single-prediction call.
 
 ### Negative
 
@@ -86,7 +101,8 @@ func (s *ONNXSession) Predict(features []float32) (float32, error) {
 - Docker multi-stage build handles CGO compilation with correct ONNX Runtime version
 - Shared Parquet format and JSON schemas ensure Python/Go interoperability
 - Feature engineering preprocessed to Parquet, loaded at Go startup
-- CI builds test against specific ONNX Runtime version (1.18.0)
+- The Docker image installs ONNX Runtime 1.18.0. The Go CI job builds and tests without installing
+  or selecting that runtime library, so version compatibility is not covered by CI.
 
 ## References
 
