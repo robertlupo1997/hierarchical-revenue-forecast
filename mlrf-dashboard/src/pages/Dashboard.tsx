@@ -547,9 +547,9 @@ export function Dashboard() {
           />
           <StatCard
             icon={BarChart3}
-            label="Active Stores"
+            label="Top-Level Nodes"
             value={String(displayHierarchy.children?.length ?? 54)}
-            subValue="Across all regions"
+            subValue="Children of the hierarchy root"
             delay={100}
           />
           <StatCard
@@ -649,7 +649,7 @@ export function Dashboard() {
             ) : (
               <ForecastChart
                 data={displayForecast}
-                title={`Revenue Forecast - Store ${selectedStore}, ${selectedFamily}`}
+                title={`Unit Sales Forecast - Store ${selectedStore}, ${selectedFamily}`}
                 showConfidenceIntervals={true}
                 onExport={handleExport}
                 exportEnabled={displayForecast.length > 0}
@@ -675,7 +675,7 @@ export function Dashboard() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                  Revenue by Hierarchy
+                  Unit Sales by Hierarchy
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Drill down through stores and product families

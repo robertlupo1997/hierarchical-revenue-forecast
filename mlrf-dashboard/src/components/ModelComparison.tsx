@@ -62,10 +62,15 @@ export function ModelComparison({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">
-            Model Performance
+            Model Performance (illustrative)
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
             {metricDescriptions[selectedMetric]}
+          </p>
+          <p className="text-sm font-medium text-destructive mt-1">
+            These values are hard-coded placeholders, not evaluation results. The
+            training pipeline never trains AutoARIMA, ETS or SeasonalNaive, and
+            never applies MinTrace. See LIMITATIONS.md.
           </p>
         </div>
         <div className="relative">
@@ -154,7 +159,7 @@ export function ModelComparison({
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-success flex items-center gap-2">
-                Best Model
+                Best of the illustrative values
                 <span className="font-mono text-foreground">
                   {bestModel.model}
                 </span>
