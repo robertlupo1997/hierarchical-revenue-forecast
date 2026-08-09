@@ -152,8 +152,9 @@ export function Batch() {
               <h3 className="font-medium text-foreground">How Batch Predictions Work</h3>
               <p className="text-sm text-muted-foreground">
                 Upload a CSV file with multiple prediction requests. Each row specifies a store,
-                product family, date, and forecast horizon. The system will process all requests
-                and return predictions with confidence intervals.
+                product family, date, and forecast horizon. Batch upload returns point predictions.
+                Interval fields appear only on uncached predictions, and only when the API has
+                interval parameters loaded.
               </p>
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2">
@@ -231,7 +232,8 @@ export function Batch() {
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-              Family names are case-insensitive but must match exactly (e.g., "GROCERY I", not "GROCERY")
+              This uploader converts family names to uppercase before sending them; the API itself
+              matches case-sensitively. Names must otherwise match exactly (e.g., "GROCERY I", not "GROCERY")
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />

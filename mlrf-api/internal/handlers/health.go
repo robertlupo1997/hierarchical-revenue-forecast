@@ -164,7 +164,13 @@ type ModelMetric struct {
 
 // ModelMetrics returns model comparison metrics for the dashboard.
 func (h *Handlers) ModelMetrics(w http.ResponseWriter, r *http.Request) {
-	// Model comparison data - LightGBM from actual training, others estimated
+	// WARNING: every value below is a hard-coded illustrative literal, including
+	// the LightGBM row. This handler loads no metrics artifact, and no evaluation
+	// in this repository produced these numbers. The training pipeline never
+	// trains AutoARIMA, ETS or SeasonalNaive, and never applies MinTrace, so the
+	// non-LightGBM rows describe models that were never run.
+	// Do not present this endpoint's output as measured model performance.
+	// See LIMITATIONS.md and DECISIONS-PENDING.md.
 	metrics := []ModelMetric{
 		{Model: "LightGBM + MinTrace", RMSLE: 0.4770, MAPE: 0.15, RMSE: 214.58},
 		{Model: "AutoARIMA + BottomUp", RMSLE: 0.5200, MAPE: 0.19, RMSE: 245.00},

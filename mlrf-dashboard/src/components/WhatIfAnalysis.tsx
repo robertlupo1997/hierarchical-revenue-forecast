@@ -152,6 +152,12 @@ export function WhatIfAnalysis({
           <p className="mt-1 text-sm text-muted-foreground">
             Explore how changes affect predictions
           </p>
+          <p className="mt-1 text-sm font-medium text-destructive">
+            Known defect: the server maps these control names to the wrong feature
+            positions, so a slider does not change the feature it is labelled with.
+            Several controls are not model features at all. Treat these results as
+            meaningless until the index map is corrected. See DECISIONS-PENDING.md.
+          </p>
         </div>
         <button
           onClick={handleReset}
