@@ -1,6 +1,15 @@
 # MLRF Kubernetes Deployment Guide
 
-This guide covers deploying the Multi-LOB Revenue Forecasting System (MLRF) to Kubernetes.
+This guide covers deploying MLRF to Kubernetes.
+
+The Kustomize configuration deploys the API, the dashboard, and Redis. It does **not** include a
+SHAP deployment or service. The API defaults to a SHAP service at `localhost:50051` and disables
+`/explain` when it cannot connect, so explanations will be unavailable until you add a SHAP
+deployment and point `SHAP_SERVICE_ADDR` at it.
+
+Before deploying anywhere that matters, read [LIMITATIONS.md](../LIMITATIONS.md). In particular,
+`/health` returns `healthy` even when the model, feature store, Redis, and SHAP service are all
+missing, so it is not a usable readiness signal as written.
 
 ## Prerequisites
 
@@ -158,7 +167,7 @@ curl http://mlrf.local/
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `API_KEY` | (none) | API authentication key |
-| `CORS_ORIGINS` | `http://mlrf.local` | Allowed CORS origins |
+| `CORS_ORIGINS` | `http://mlrf.local,https://mlrf.local` (as set in the checked-in ConfigMap) | Allowed CORS origins |
 | `RATE_LIMIT_RPS` | `100` | Rate limit requests per second |
 | `RATE_LIMIT_BURST` | `200` | Rate limit burst size |
 | `REDIS_URL` | `redis://mlrf-redis:6379` | Redis connection URL |

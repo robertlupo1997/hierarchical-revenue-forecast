@@ -1,6 +1,7 @@
 # MLRF Setup Guide
 
-Complete guide for setting up the Multi-LOB Revenue Forecasting System (MLRF) from scratch.
+Setup guide for the MLRF store unit-sales forecasting system, covering the data, training,
+Compose, development, and verification workflows.
 
 ## Table of Contents
 
@@ -40,13 +41,13 @@ Complete guide for setting up the Multi-LOB Revenue Forecasting System (MLRF) fr
 |----------|---------|---------|--------------|
 | Go | 1.22+ | API development | [go.dev](https://go.dev/dl/) |
 | Node.js | 18+ | Dashboard development | [nodejs.org](https://nodejs.org/) |
-| Bun | 1.0+ | Faster package management | [bun.sh](https://bun.sh/) |
+| Bun | 1.0+ | Optional package manager supported by the dashboard scripts | [bun.sh](https://bun.sh/) |
 
 ### System Requirements
 
-- **Disk Space**: ~5 GB (data + models + Docker images)
-- **RAM**: 8 GB minimum, 16 GB recommended for training
-- **CPU**: Multi-core recommended for faster training
+Disk and memory requirements have not been measured for this repository. Record them from a clean
+setup and training run before relying on them. Training is CPU-bound and benefits from multiple
+cores.
 
 ### Verify Prerequisites
 
@@ -180,7 +181,7 @@ Download the Kaggle Store Sales dataset:
 # Ensure virtual environment is active
 source .venv/bin/activate
 
-# Download data (~100 MB)
+# Download data into data/raw
 python -m mlrf_data.download
 ```
 
@@ -188,7 +189,7 @@ This creates:
 ```
 data/
   raw/
-    train.csv           # 3M rows of historical sales
+    train.csv           # Historical sales rows
     stores.csv          # Store metadata
     oil.csv             # Oil price time series
     holidays_events.csv # Holiday calendar
@@ -198,7 +199,9 @@ data/
 **Verify Download**:
 ```bash
 ls -lh data/raw/
-# Should show train.csv (~150 MB), stores.csv, oil.csv, etc.
+# Should list train.csv, stores.csv, oil.csv, holidays_events.csv and
+# transactions.csv. File sizes depend on the downloaded archive; this
+# repository records no download manifest or checksum.
 ```
 
 ### 5. Build Feature Matrix
@@ -209,7 +212,7 @@ Generate the feature matrix for model training:
 # Preprocess raw data
 python -m mlrf_data.preprocess
 
-# Build feature matrix (~2.8M rows x 27 features)
+# Build feature matrix (27 model features per row)
 python -m mlrf_data.features
 ```
 
@@ -220,8 +223,10 @@ data/
     train_preprocessed.parquet
   features/
     feature_matrix.parquet    # Main training data
-    hierarchy.parquet         # Hierarchy structure
 ```
+
+Feature generation writes only `feature_matrix.parquet`. The summing-matrix and hierarchy-spec
+artifacts are produced separately, under `models/`, by running the hierarchy module.
 
 **Verify Feature Matrix**:
 ```bash
@@ -231,7 +236,8 @@ df = pl.read_parquet('data/features/feature_matrix.parquet')
 print(f'Shape: {df.shape}')
 print(f'Columns: {df.columns[:10]}...')
 "
-# Expected: Shape: (2800000+, 30+)
+# Row count depends on the downloaded dataset and on the rows dropped
+# for lacking the 90-day lag.
 ```
 
 ### 6. Train Models
@@ -252,18 +258,17 @@ models/
   lightgbm_model.onnx       # ONNX model for Go inference
   lightgbm_model.pkl        # Python pickle for reference
   metrics.json              # Training metrics (RMSLE, etc.)
-  shap_values.parquet       # SHAP explanations (if computed)
-  prediction_intervals.json # Confidence interval parameters
+  feature_importance.csv    # Feature importance (if SHAP computed)
+  shap_waterfall.json       # Waterfall data (if SHAP computed)
+  shap_explainer.pkl        # Pickled explainer (if SHAP computed)
+  prediction_intervals.json # Residual-quantile interval parameters
 ```
 
-**Training Output**:
-```
-Training LightGBM model...
-Cross-validation RMSLE: 0.477 (+/- 0.012)
-Final model RMSLE: 0.477
-Exporting to ONNX...
-Model saved to models/lightgbm_model.onnx
-```
+**Training Output**: training prints metrics computed from your dataset and configuration. This
+guide deliberately shows no example numbers: any RMSLE quoted here would not be reproducible, and
+the value you see depends on the downloaded data and options. Treat the walk-forward result as a
+tuning-split metric, not a held-out score, and read `docs/MODEL_CARD.md` on why the current
+evaluation is a rolling one-step evaluation.
 
 **Verify Model Quality**:
 ```bash
@@ -295,13 +300,17 @@ docker compose logs -f dashboard # Dashboard logs
 **Access the System**:
 - **Dashboard**: http://localhost:3000
 - **API Health**: http://localhost:8081/health
-- **API Docs**: http://localhost:8081/metrics/prometheus
+- **Prometheus metrics**: http://localhost:8081/metrics/prometheus (this repository exposes no
+  interactive API documentation)
 
 **Verify Services**:
 ```bash
 # Test API health
 curl http://localhost:8081/health
-# Expected: {"status":"ok"}
+# Expected: {"status":"healthy", ...} plus dependency status fields.
+# Note: /health reports "healthy" even when the ONNX model, feature
+# store, Redis and SHAP service are all absent, so a 200 here does not
+# establish that prediction works. See LIMITATIONS.md.
 
 # Test prediction endpoint
 curl -X POST http://localhost:8081/predict/simple \
@@ -353,7 +362,7 @@ export API_KEY=""  # Empty = no auth (dev mode)
 ```bash
 cd mlrf-dashboard
 
-# Install dependencies (use bun for faster install)
+# Install dependencies
 bun install
 # or: npm install
 
@@ -429,7 +438,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 ### Docker Compose Profiles
 
 ```bash
-# Production (default)
+# Default local stack
 docker compose up -d
 
 # With monitoring (Prometheus, Grafana, Jaeger)
@@ -495,7 +504,10 @@ Then configure an external auth provider (LDAP, OAuth, etc.).
 
 ### Quality Gates
 
-Edit `quality_gates.yaml` to adjust thresholds:
+No `quality_gates.yaml` exists in this repository. Training accepts an RMSLE threshold as a CLI
+option, and it only logs a warning when the threshold is exceeded rather than failing the run.
+`scripts/generate_verification_report.py` expects a `quality_gates.yaml` and exits with an error
+when it is absent, so create one in the shape below only if you also intend to use that script:
 
 ```yaml
 model:
@@ -530,13 +542,14 @@ python scripts/generate_verification_report.py
 
 ### Expected Results
 
-| Check | Expected |
-|-------|----------|
-| Model RMSLE | < 0.5 |
+These are the thresholds the verification tooling checks against, not results this repository has
+recorded. No passing run is checked in.
+
+| Check | Threshold used by the tooling |
+|-------|-------------------------------|
+| Model RMSLE | < 0.5 (warning only; training continues when exceeded) |
 | API P95 Latency | < 15ms |
-| Feature Matrix Rows | > 2.8M |
-| API Health | `{"status":"ok"}` |
-| Dashboard Load | < 2s |
+| API Health | `status` field equals `healthy` |
 
 ---
 
