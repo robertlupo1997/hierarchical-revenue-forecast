@@ -1,4 +1,12 @@
-// Package cache provides Redis caching with TinyLFU local cache layer.
+// Package cache provides Redis caching fronted by a local in-memory map.
+//
+// The local tier is NOT TinyLFU and NOT LRU: it tracks no access frequency or
+// recency. Eviction is a scan that deletes entries older than half the TTL, so
+// MaxLocal is a target rather than a strict bound.
+//
+// The local map is also not guarded by a mutex while being read and mutated on
+// concurrent request paths, which is a data race. See LIMITATIONS.md and
+// DECISIONS-PENDING.md.
 package cache
 
 import (
@@ -37,7 +45,7 @@ type cacheEntry struct {
 // Config holds Redis connection configuration.
 type Config struct {
 	URL      string
-	MaxLocal int           // Maximum local cache entries (TinyLFU-like behavior)
+	MaxLocal int           // Target local cache entries; not strictly enforced
 	TTL      time.Duration // Cache TTL
 }
 

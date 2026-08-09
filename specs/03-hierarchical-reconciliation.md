@@ -1,5 +1,10 @@
 # Spec: Hierarchical Reconciliation
 
+> **Status: not integrated.** This is the original specification, kept as a record of intent. The
+> reconciliation methods exist as standalone utilities, but the training pipeline never calls them,
+> no reconciled forecast is persisted, and no comparison against base forecasts has been run. See
+> LIMITATIONS.md.
+
 ## Job To Be Done
 As a forecaster, I need forecasts at all hierarchy levels (Total, Store, Family, Bottom) that sum correctly, using optimal reconciliation methods.
 
