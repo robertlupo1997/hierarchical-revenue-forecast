@@ -1,20 +1,21 @@
 # MLRF Go API
 
-High-performance inference API for the Multi-LOB Revenue Forecasting System.
+Go API for ONNX inference, prediction caching, SHAP proxying, and monitoring, part of the MLRF
+unit-sales forecasting system.
 
 ## Features
 
 - ONNX Runtime inference for LightGBM models
-- Redis caching with TinyLFU local cache layer
+- Redis caching fronted by a simple local map cache
 - RESTful API endpoints for predictions and SHAP explanations
-- Sub-10ms latency for cached predictions
 - Docker support
 
 ## Requirements
 
 - Go 1.22+
-- ONNX Runtime 1.17.1
-- Redis 7+ (optional, for caching)
+- ONNX Runtime (the provided Docker image installs 1.18.0)
+- Redis 7+ (optional; note that when Redis initialization fails the server disables caching
+  entirely rather than falling back to local-only caching)
 
 ## Quick Start
 
@@ -36,11 +37,11 @@ go build -o server ./cmd/server
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | 8081 | Server port |
+| `PORT` | 8080 | Server port when unset. `docker-compose.yml` sets `PORT=8081`, which is why the examples below use 8081 |
 | `MODEL_PATH` | models/lightgbm_model.onnx | Path to ONNX model |
 | `REDIS_URL` | redis://localhost:6379 | Redis connection URL |
 | `ONNX_LIB_PATH` | libonnxruntime.so | Path to ONNX Runtime library |
-| `SHAP_DATA_PATH` | models/shap_data.json | Path to pre-computed SHAP values |
+| `SHAP_SERVICE_ADDR` | localhost:50051 | Address of the live SHAP sidecar. The server does not read a `SHAP_DATA_PATH` and does not load pre-computed SHAP values |
 | `HIERARCHY_DATA_PATH` | models/hierarchy_data.json | Path to hierarchy data |
 
 ## API Endpoints
@@ -81,21 +82,24 @@ go build -o server ./cmd/server
 
 ## Error Codes
 
-All error responses follow a structured format:
+Errors from the prediction and explanation handlers follow a structured format:
 
 ```json
 {
   "error": "Human-readable error message",
-  "code": "ERROR_CODE",
-  "request_id": "abc123"  // Optional, when request tracking is enabled
+  "code": "ERROR_CODE"
 }
 ```
+
+The response type also declares an optional `request_id`, but nothing populates it: the error
+helper reads a private context key that the installed chi request-ID middleware never sets. Wire
+chi's request ID through before relying on this field.
 
 ### Authentication & Authorization (4xx)
 
 | Code | HTTP Status | Description | Resolution |
 |------|-------------|-------------|------------|
-| `AUTH_REQUIRED` | 401 | API key is missing or invalid | Include a valid `X-API-Key` header or `api_key` query parameter |
+| `AUTH_REQUIRED` | 401 | API key is missing or invalid | Include a valid `X-API-Key` header. Query parameters are not accepted |
 
 ### Rate Limiting (429)
 
@@ -110,13 +114,13 @@ All error responses follow a structured format:
 | `INVALID_REQUEST` | 400 | Request body is malformed or missing required fields | Check request JSON structure |
 | `PARSE_ERROR` | 400 | JSON parsing failed | Ensure valid JSON syntax |
 | `MISSING_DATE` | 400 | `date` field is missing | Include `date` in request body |
-| `INVALID_DATE` | 400 | Date not in YYYY-MM-DD format | Use ISO date format, e.g., `"2017-08-01"` |
+| `INVALID_DATE` | 400 | Date not in YYYY-MM-DD format. No range check is performed | Use ISO date format, e.g., `"2017-08-01"` |
 | `MISSING_FAMILY` | 400 | `family` field is missing | Include `family` in request body |
-| `INVALID_FAMILY` | 400 | Product family name not recognized | Use one of the 33 valid family names (see below) |
-| `INVALID_STORE` | 400 | `store_nbr` must be positive (1-54) | Provide a valid store number |
+| `INVALID_FAMILY` | 400 | Product family name not recognized. Matching is case-sensitive | Use one of the 33 valid family names (see below) |
+| `INVALID_STORE` | 400 | `store_nbr` is not positive. No upper bound is enforced, so values above 54 are accepted | Provide a positive store number |
 | `MISSING_FEATURES` | 400 | `features` array is missing | Include `features` array with 27 values |
 | `INVALID_FEATURES` | 400 | Features array wrong length | Provide exactly 27 feature values |
-| `INVALID_HORIZON` | 400 | Forecast horizon not supported | Use 15, 30, 60, or 90 days |
+| `INVALID_HORIZON` | 400 | Forecast horizon not supported. Only `/predict/simple` validates horizon; `/predict` and `/predict/batch` do not | Use 15, 30, 60, or 90 days |
 | `EMPTY_BATCH` | 400 | Batch predictions array is empty | Include at least one prediction in batch |
 | `BATCH_TOO_LARGE` | 400 | Batch size exceeds 100 items | Split into smaller batches (max 100) |
 
@@ -247,6 +251,9 @@ curl -X POST http://localhost:8081/explain \
 
 ## Performance
 
-- P95 latency < 10ms with warm cache
-- P99 latency < 50ms cold
-- Handles 100+ RPS sustained
+No measured results are published here. The load-test suite under `tests/load/` defines latency and
+error thresholds, and `scripts/integration_tests.sh` measures cached and uncached API latency. Run
+them in your target environment and publish the resulting output alongside any figure you quote.
+
+Note when interpreting results: ONNX inference is serialized by a session-wide mutex, and
+`PredictBatch` is a loop over that same single-prediction call.

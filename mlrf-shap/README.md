@@ -1,10 +1,15 @@
 # MLRF SHAP Service
 
-Real-time SHAP explanation service for the Multi-LOB Revenue Forecasting System.
+SHAP explanation service for the MLRF unit-sales forecasting system.
 
 ## Overview
 
-This service provides on-demand SHAP (SHapley Additive exPlanations) computation for LightGBM model predictions via gRPC. Unlike pre-computed or mocked SHAP values, this service computes real explanations for any store-family-date combination.
+This service computes SHAP (SHapley Additive exPlanations) values for LightGBM model predictions on
+demand, over an **HTTP JSON API**. Despite the port number, it does not speak gRPC. It computes
+explanations for any store-family-date combination it is given features for, rather than serving
+pre-computed values.
+
+Its latency, throughput, and memory footprint have not been measured; see LIMITATIONS.md.
 
 ## Requirements
 
@@ -16,10 +21,9 @@ This service provides on-demand SHAP (SHapley Additive exPlanations) computation
 ```bash
 # Install dependencies
 pip install -e .
-
-# Generate proto files (required before first run)
-python generate_proto.py
 ```
+
+No protobuf generation step is required, and this package has no protobuf dependency.
 
 ## Usage
 
@@ -29,9 +33,11 @@ python generate_proto.py
 # Default settings
 mlrf-shap --model /path/to/lightgbm_model.txt
 
-# Custom port and workers
-mlrf-shap --port 50051 --model /path/to/model.txt --workers 10 --log-level DEBUG
+# Custom port and log level
+mlrf-shap --port 50051 --model /path/to/model.txt --log-level DEBUG
 ```
+
+The CLI accepts `--port`, `--model`, and `--log-level`. There is no `--workers` option.
 
 ### Docker
 
@@ -46,47 +52,36 @@ docker run -p 50051:50051 -v /path/to/models:/models mlrf-shap
 ### Health Check
 
 ```bash
-# Using grpc_health_probe
-grpc_health_probe -addr=localhost:50051
-
-# Using grpcurl
-grpcurl -plaintext localhost:50051 shap.ShapService/Health
+curl http://localhost:50051/health
 ```
 
 ## API
 
-### Explain
+The service exposes a JSON API over HTTP.
+
+### `POST /explain`
 
 Compute SHAP values for a prediction.
 
-```protobuf
-rpc Explain(ExplainRequest) returns (ExplainResponse);
-```
-
-**Request:**
-- `store_nbr` (int32): Store number
+**Request body:**
+- `store_nbr` (int): Store number
 - `family` (string): Product family
 - `date` (string): Date in YYYY-MM-DD format
-- `features` (repeated float): 27 features matching model input
+- `features` (array of float): 27 features matching model input
 
-**Response:**
-- `base_value` (double): Expected value (average prediction)
-- `features` (repeated WaterfallFeature): Top contributing features
-- `prediction` (double): Final prediction value
+**Response body:**
+- `base_value` (float): Expected value (average prediction)
+- `features` (array): Top contributing features
+- `prediction` (float): Final prediction value
 
-### Health
+### `GET /health`
 
-Check service health.
-
-```protobuf
-rpc Health(HealthRequest) returns (HealthResponse);
-```
+Returns service health as JSON.
 
 ## Performance
 
-- Typical latency: 50-200ms per explanation
-- Throughput: ~50-100 RPS depending on hardware
-- Memory: ~500MB (model + explainer)
+Not measured. Latency, throughput, and memory depend on hardware and model size; benchmark on your
+target hardware before quoting figures.
 
 ## Feature Names
 
@@ -99,3 +94,8 @@ The service expects 27 features in this order:
 6. sales_rolling_mean_7, sales_rolling_mean_14, sales_rolling_mean_28, sales_rolling_mean_90
 7. sales_rolling_std_7, sales_rolling_std_14, sales_rolling_std_28, sales_rolling_std_90
 8. family_encoded, type_encoded
+
+**Naming is inconsistent across services.** This service and the Go feature store use
+`family_encoded` / `type_encoded`, while the Go inference layer names the same two positions
+`family` / `type`, and the Python feature pipeline produces neither: it trains on categorical
+columns named `family` and `type`. See LIMITATIONS.md on training/serving parity.
