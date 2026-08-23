@@ -1,5 +1,10 @@
 # Spec: Go Inference API
 
+> **Status: partially implemented.** This is the original specification, kept as a record of intent.
+> The latency figures below are targets that have never been measured. The local cache is a plain
+> map with TTL and age-based eviction, not TinyLFU, and its 10,000-item size is not a strict bound.
+> See LIMITATIONS.md.
+
 ## Job To Be Done
 As a dashboard developer, I need a fast REST API that returns predictions and explanations in under 10ms.
 

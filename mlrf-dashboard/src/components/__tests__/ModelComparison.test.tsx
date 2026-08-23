@@ -18,7 +18,7 @@ describe('ModelComparison', () => {
   describe('Rendering', () => {
     it('renders without crashing', () => {
       render(<ModelComparison data={mockModels} />);
-      expect(screen.getByText('Model Performance')).toBeInTheDocument();
+      expect(screen.getByText('Model Performance (illustrative)')).toBeInTheDocument();
     });
 
     it('renders all models in the table', () => {
@@ -91,13 +91,13 @@ describe('ModelComparison', () => {
   describe('Best Model Highlight', () => {
     it('highlights the best model', () => {
       render(<ModelComparison data={mockModels} />);
-      expect(screen.getByText('Best Model')).toBeInTheDocument();
+      expect(screen.getByText('Best of the illustrative values')).toBeInTheDocument();
     });
 
     it('shows LightGBM as best for RMSLE (lowest value)', () => {
       render(<ModelComparison data={mockModels} initialMetric="rmsle" />);
       // Best model section should contain LightGBM
-      const bestModelSection = screen.getByText('Best Model').closest('div');
+      const bestModelSection = screen.getByText('Best of the illustrative values').closest('div');
       expect(bestModelSection).toHaveTextContent('LightGBM');
     });
 
@@ -213,14 +213,14 @@ describe('ModelComparison', () => {
     it('handles empty data array', () => {
       render(<ModelComparison data={[]} />);
       // Should still render without crashing
-      expect(screen.getByText('Model Performance')).toBeInTheDocument();
+      expect(screen.getByText('Model Performance (illustrative)')).toBeInTheDocument();
     });
 
     it('handles single model', () => {
       render(<ModelComparison data={singleModel} />);
       // LightGBM appears multiple times (best model section + table), so use getAllByText
       expect(screen.getAllByText('LightGBM').length).toBeGreaterThan(0);
-      expect(screen.getByText('Best Model')).toBeInTheDocument();
+      expect(screen.getByText('Best of the illustrative values')).toBeInTheDocument();
     });
   });
 });

@@ -14,7 +14,8 @@ The MLRF dashboard requires SHAP (SHapley Additive exPlanations) visualizations 
 
 ### Requirements
 
-1. **Waterfall chart**: Display cumulative feature contributions with connecting lines
+1. **Waterfall chart**: Display cumulative feature contributions with connecting lines (the
+   connecting lines were never implemented; see Consequences)
 2. **Interactive tooltips**: Show feature name, value, and SHAP contribution on hover
 3. **Theme awareness**: Support light/dark mode with CSS variable integration
 4. **Responsive sizing**: Adapt to container width and mobile screens
@@ -95,27 +96,32 @@ const chartData = useMemo(() => {
 
 ### Positive
 
-- **Pixel-perfect waterfall**: Complete control over bar positioning, connecting lines, and labels
-- **Theme-aware**: Seamless light/dark mode via CSS variables, no JS theme switching needed
-- **Accessible**: Proper ARIA labels, keyboard navigation possible
+- **Full control over rendering**: bar positioning and labels are defined directly by the component.
+  Note that connecting lines between adjacent cumulative bars are **not** implemented; the chart
+  renders bars, a zero reference line, and axes.
+- **Theme-aware**: light/dark mode via CSS variables, no JS theme switching needed
 - **Testable**: React Testing Library can query chart elements
-- **Maintainable**: ~150 lines of typed React code vs wrestling with library limitations
 
 ### Negative
 
-- **More initial code**: Custom implementation required ~200 lines vs hypothetical library one-liner
-- **Maintenance burden**: Bug fixes and enhancements are our responsibility
-- **Learning curve**: Team must understand visx primitives and D3 scale concepts
+- **More initial code**: the component is about 300 lines of typed React
+- **Maintenance burden**: bug fixes and enhancements are our responsibility
+- **Learning curve**: team must understand visx primitives and D3 scale concepts
+- **Not keyboard accessible**: the interactive bars have only mouse-enter and mouse-leave handlers.
+  They carry no roles, ARIA labels, `tabIndex`, or keyboard handlers, so the chart is usable with a
+  pointer only. This is a known gap, not a resolved concern.
 
 ### Mitigations
 
 - Documented chart data transformation logic with inline comments
-- Created reusable chart utilities for scale setup
-- visx has active community and Airbnb maintenance
+- visx has an active community and Airbnb maintenance
+
+Scale setup is defined inline in `ShapWaterfall`; no reusable chart-scale utility was extracted.
 
 ## Alternatives Reconsidered
 
-If shap.js adds waterfall support in the future, migration would be straightforward since data structures are compatible. However, the custom implementation provides superior theme integration and React tooling.
+If shap.js adds waterfall support in the future, its data structures look compatible with ours, but
+no migration prototype or compatibility test has been attempted, so the effort is unknown.
 
 ## References
 

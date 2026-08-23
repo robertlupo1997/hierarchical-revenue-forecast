@@ -48,20 +48,31 @@ Each ONNX inference takes ~5-10ms. Without caching, high-traffic scenarios would
 
 We chose a **two-tier caching strategy**:
 
-1. **L1: Local in-memory cache** with LRU eviction (10,000 entries max)
+1. **L1: Local in-memory cache**, configured with a 10,000-entry target
 2. **L2: Redis** for shared, persistent caching (1-hour TTL)
+
+**As implemented, L1 is a plain Go map with TTL expiry and best-effort age-based deletion.** It is
+not LRU and not TinyLFU: it tracks no access recency, and when no entry is older than half the TTL
+it can grow past the configured size, so 10,000 is not a strict bound. The map is also not guarded
+by a mutex; see LIMITATIONS.md.
 
 ### Key factors
 
-1. **Hot path optimization**: The L1 local cache serves repeated requests in ~100μs, 10-20x faster than Redis network round-trip. Dashboard refresh hitting the same predictions benefits immediately.
+1. **Hot path optimization**: an in-process lookup avoids a Redis network round-trip. Neither tier's
+   latency has been measured in this repository.
 
-2. **Shared state**: Redis L2 enables multiple API replicas to share cache. When replica A caches a prediction, replica B can retrieve it, reducing redundant inference.
+2. **Shared state**: Redis L2 enables multiple API replicas to share cache. When replica A caches a
+   prediction, replica B can retrieve it, reducing redundant inference.
 
-3. **Persistence**: Redis AOF or RDB persistence survives restarts within TTL. API restart doesn't invalidate warm predictions.
+3. **Persistence**: Redis AOF or RDB persistence survives restarts within TTL. API restart doesn't
+   invalidate warm predictions.
 
-4. **Memory bounds**: L1 cache uses LRU eviction at 10,000 entries (~10MB). Prevents memory growth while keeping hot predictions local.
+4. **Memory bounds**: the L1 cache is intended to stay near 10,000 entries. See the caveat above:
+   the current eviction pass does not enforce that bound.
 
-5. **Graceful degradation**: If Redis is unavailable, the API falls back to L1-only caching (or no caching if L1 is disabled). Inference still works.
+5. **Graceful degradation**: **not implemented as described.** Cache construction pings Redis and
+   returns an error if the ping fails, and the server then sets the entire cache — including L1 — to
+   nil. If Redis is unavailable the API runs with no caching at all. Inference still works.
 
 ### Implementation
 
@@ -102,20 +113,24 @@ func (c *RedisCache) Get(key string) (*PredictionResult, error) {
 Keys are structured for efficient lookup and debugging:
 
 ```
-pred:{store_nbr}:{family}:{date}:{horizon}
+pred:v1:{store_nbr}:{family}:{date}:{horizon}
 ```
 
-Example: `pred:1:GROCERY_I:2017-08-15:30`
+The family string is preserved verbatim, spaces included.
+
+Example: `pred:v1:1:GROCERY I:2017-08-15:30`
 
 ## Consequences
 
 ### Positive
 
-- **~100μs P95 for L1 hits**: Dashboard refresh is instantaneous
-- **~2ms P95 for L2 hits**: Still faster than 8ms inference
-- **85%+ hit rate**: Observed in production-like traffic patterns
-- **Horizontal scaling**: Replicas share Redis, maximizing cache utilization
-- **Fault tolerant**: API continues functioning if Redis fails
+- **Horizontal scaling**: replicas share Redis, maximizing cache utilization
+- **Inference continues without Redis**: predictions still work when the cache is unavailable,
+  though without any caching (see Key factors, point 5)
+
+No cache latency or hit-rate figures are reported: no cache benchmark or traffic measurement is
+checked in. Dashboard refresh concurrently refetches hierarchy, explanation, forecast, and accuracy
+data, so its perceived speed is not determined by L1 latency alone.
 
 ### Negative
 
@@ -128,17 +143,19 @@ Example: `pred:1:GROCERY_I:2017-08-15:30`
 
 - Cache TTL of 1 hour balances freshness vs hit rate
 - L1 populated on L2 hit ensures eventual consistency
-- Prometheus metrics track hit rates and latencies for both tiers
-- Redis Sentinel or Cluster for production HA (documented in deployment guide)
-- API health check includes Redis connectivity
+- Prometheus exposes aggregate cache hit and miss counters. Both tiers increment the same unlabelled
+  hit counter, so hit rates are not broken down by tier, and no cache-latency metric exists.
+- Redis Sentinel or Cluster for HA (documented in deployment guide)
+- The API health check reports whether Redis cache initialization succeeded at startup. It does not
+  ping Redis, so it does not reflect current connectivity.
 
 ## Configuration
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `REDIS_URL` | `redis://localhost:6379` | Redis connection string |
-| `CACHE_MAX_LOCAL` | `10000` | L1 cache max entries |
-| `CACHE_TTL` | `1h` | Cache entry TTL |
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection string (read from the environment) |
+| L1 size | `10000`, hard-coded | Not configurable; server startup does not read `CACHE_MAX_LOCAL` |
+| Cache TTL | `1h`, hard-coded | Not configurable; server startup does not read `CACHE_TTL` |
 
 ## References
 

@@ -1,4 +1,8 @@
-# Spec: Integration & Deployment
+# Spec: Integration
+
+> **Status: acceptance criteria unverified.** This is the original specification, kept as a record of
+> intent. The latency criteria have never been measured, and there is no end-to-end test asserting a
+> consistent prediction through Python, ONNX, Go, and the dashboard. See LIMITATIONS.md. & Deployment
 
 ## Job To Be Done
 As a developer, I need to run the entire system locally with one command and verify end-to-end functionality.

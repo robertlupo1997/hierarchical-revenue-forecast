@@ -1,5 +1,11 @@
 # Spec: ML Training
 
+> **Status: partially implemented.** This is the original specification, kept as a record of intent.
+> Not delivered: the statistical models are never called by the training pipeline, so no model
+> selection happens; the 15/30/60/90-day horizons are not implemented (the label is never shifted to
+> `sales[t+h]`); and there is no holdout RMSLE, because validation runs with no gap and its features
+> contain actuals from inside the validation window. See LIMITATIONS.md.
+
 ## Job To Be Done
 As a data scientist, I need to train forecasting models that achieve RMSLE < 0.5 on the holdout set and export them for production inference.
 
