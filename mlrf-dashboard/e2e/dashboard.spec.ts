@@ -21,13 +21,17 @@ test.describe('MLRF Dashboard', () => {
       page.getByRole('heading', { name: /Multi-LOB Revenue Forecasting/i })
     ).toBeVisible();
 
-    // Verify subheading
-    await expect(page.getByText(/90-day forecast with SHAP explainability/i)).toBeVisible();
+    // Verify subheading (desktop header renders "{horizon}-day hierarchical forecast
+    // with SHAP explainability"; default horizon is 90)
+    await expect(
+      page.getByText(/day hierarchical forecast with SHAP explainability/i)
+    ).toBeVisible();
   });
 
   test('displays date selector and refresh button', async ({ page }) => {
-    // Date input should be visible
-    const dateInput = page.locator('input[type="date"]');
+    // Date input should be visible (the responsive layout renders two date
+    // inputs; only the desktop one is visible at the test viewport)
+    const dateInput = page.locator('input[type="date"]:visible');
     await expect(dateInput).toBeVisible();
 
     // Refresh button should be visible
@@ -35,8 +39,8 @@ test.describe('MLRF Dashboard', () => {
   });
 
   test('shows mock data warning when API unavailable', async ({ page }) => {
-    // Mock data warning should appear since API is not running
-    await expect(page.getByText(/Using demo data/i)).toBeVisible();
+    // Demo banner should appear since API is not running
+    await expect(page.getByText(/Displaying mock data/i)).toBeVisible();
   });
 
   test('displays forecast explanation section', async ({ page }) => {
@@ -48,8 +52,8 @@ test.describe('MLRF Dashboard', () => {
       page.getByRole('heading', { name: /Forecast Explanation/i }).first()
     ).toBeVisible();
 
-    // Should show store/family info
-    await expect(page.getByText(/Store \d+ - /i)).toBeVisible();
+    // Should show store/family info ("Store 1 · GROCERY I")
+    await expect(page.getByText(/Store \d+ · /i)).toBeVisible();
 
     // Details link should exist
     await expect(page.getByRole('link', { name: /Details/i })).toBeVisible();
@@ -64,36 +68,41 @@ test.describe('MLRF Dashboard', () => {
       page.getByRole('heading', { name: /Model Performance/i })
     ).toBeVisible();
 
-    // Should show metric selector dropdown
-    const metricSelector = page.locator('select');
+    // Should show metric selector dropdown (the panel's own select, not the
+    // horizon selectors in the header)
+    const metricSelector = page
+      .locator('div.card', { hasText: 'Model Performance' })
+      .locator('select');
     await expect(metricSelector).toBeVisible();
 
     // Should have RMSLE option
     await expect(metricSelector).toContainText('RMSLE');
 
-    // Should show "Best Model" highlight
-    await expect(page.getByText(/Best Model:/i)).toBeVisible();
+    // Should show the best-model highlight badge
+    await expect(page.getByText(/Best of the illustrative values/i)).toBeVisible();
   });
 
   test('displays forecast chart with legend', async ({ page }) => {
     // Wait for charts to render
     await page.waitForLoadState('networkidle');
 
-    // Should show Revenue Forecast title
-    await expect(page.getByText(/Revenue Forecast - Store/i)).toBeVisible();
+    // Should show forecast chart title
+    await expect(page.getByText(/Unit Sales Forecast - Store/i)).toBeVisible();
 
-    // Legend items should be visible
-    await expect(page.getByText('Historical')).toBeVisible();
-    await expect(page.getByText('Forecast')).toBeVisible();
+    // Legend items should be visible. "Forecast" appears throughout the page,
+    // so scope to the legend inside the forecast chart card.
+    const chartCard = page.locator('div.card', { hasText: 'Unit Sales Forecast' });
+    await expect(chartCard.getByText('Historical', { exact: true })).toBeVisible();
+    await expect(chartCard.getByText('Forecast', { exact: true })).toBeVisible();
   });
 
   test('displays hierarchy drilldown section', async ({ page }) => {
     // Wait for hierarchy to load
     await page.waitForLoadState('networkidle');
 
-    // Should show Revenue by Hierarchy heading
+    // Should show hierarchy drilldown heading
     await expect(
-      page.getByRole('heading', { name: /Revenue by Hierarchy/i })
+      page.getByRole('heading', { name: /Unit Sales by Hierarchy/i })
     ).toBeVisible();
 
     // Should show Total node (root of hierarchy)
@@ -108,15 +117,19 @@ test.describe('MLRF Dashboard', () => {
     await page.waitForLoadState('networkidle');
 
     // Should show store cards (mock data has Store 1, Store 2, etc.)
-    await expect(page.getByText(/Store 1/i)).toBeVisible();
-    await expect(page.getByText(/Store 2/i)).toBeVisible();
+    // The store name also appears in the chart title, so use .first()
+    await expect(page.getByText(/Store 1/i).first()).toBeVisible();
+    await expect(page.getByText(/Store 2/i).first()).toBeVisible();
 
-    // Click on Store 1 to drill down
-    await page.getByText(/Store 1/i).click();
+    // Click on Store 1 to drill down. "Store 1" also appears in the forecast
+    // chart title, so click the store node button inside the hierarchy section.
+    const hierarchySection = page.locator('div.card', { hasText: 'Unit Sales by Hierarchy' });
+    await hierarchySection.getByRole('button', { name: /Store 1/ }).first().click();
 
-    // Should now show families under Store 1
-    await expect(page.getByText(/GROCERY I/i)).toBeVisible();
-    await expect(page.getByText(/BEVERAGES/i)).toBeVisible();
+    // Should now show families under Store 1 ("Store 1" also appears in the
+    // chart title, so use .first() on the family labels)
+    await expect(page.getByText(/GROCERY I/i).first()).toBeVisible();
+    await expect(page.getByText(/BEVERAGES/i).first()).toBeVisible();
   });
 
   test('navigates to explainability page', async ({ page }) => {
@@ -149,13 +162,14 @@ test.describe('Horizon Selector', () => {
   });
 
   test('should display horizon dropdown with forecast horizon label', async ({ page }) => {
-    // Find the horizon selector by its aria-label
-    const selector = page.getByLabel('Forecast horizon');
+    // The responsive layout renders a desktop and a mobile header; only one
+    // horizon selector is visible at the test viewport, so filter to it.
+    const selector = page.locator('select[aria-label="Forecast horizon"]:visible');
     await expect(selector).toBeVisible();
   });
 
   test('should have all four horizon options available', async ({ page }) => {
-    const selector = page.getByLabel('Forecast horizon');
+    const selector = page.locator('select[aria-label="Forecast horizon"]:visible');
 
     // Check that all options exist
     await expect(selector.locator('option[value="15"]')).toHaveText('15 days');
@@ -165,7 +179,7 @@ test.describe('Horizon Selector', () => {
   });
 
   test('should default to 90 days horizon', async ({ page }) => {
-    const selector = page.getByLabel('Forecast horizon');
+    const selector = page.locator('select[aria-label="Forecast horizon"]:visible');
     await expect(selector).toHaveValue('90');
 
     // Subtitle should reflect 90-day forecast
@@ -173,7 +187,7 @@ test.describe('Horizon Selector', () => {
   });
 
   test('should update subtitle when horizon changes', async ({ page }) => {
-    const selector = page.getByLabel('Forecast horizon');
+    const selector = page.locator('select[aria-label="Forecast horizon"]:visible');
 
     // Change to 30 days
     await selector.selectOption('30');
@@ -190,7 +204,7 @@ test.describe('Horizon Selector', () => {
 
   test('should update stat card projection text when horizon changes', async ({ page }) => {
     // Change to 30 days
-    await page.getByLabel('Forecast horizon').selectOption('30');
+    await page.locator('select[aria-label="Forecast horizon"]:visible').selectOption('30');
 
     // Wait for the page to settle
     await page.waitForLoadState('networkidle');
@@ -206,7 +220,9 @@ test.describe('Date Picker', () => {
   });
 
   test('should have min/max date bounds matching dataset range', async ({ page }) => {
-    const datePicker = page.locator('input[type="date"]');
+    // The responsive layout renders two date inputs (desktop and mobile
+    // headers); only one is visible at the test viewport.
+    const datePicker = page.locator('input[type="date"]:visible');
     await expect(datePicker).toBeVisible();
 
     // Check min/max attributes match Kaggle dataset range
@@ -215,7 +231,7 @@ test.describe('Date Picker', () => {
   });
 
   test('should display default date within valid range', async ({ page }) => {
-    const datePicker = page.locator('input[type="date"]');
+    const datePicker = page.locator('input[type="date"]:visible');
     const value = await datePicker.inputValue();
 
     // Default date should be 2017-08-01 (or within range)
@@ -223,7 +239,7 @@ test.describe('Date Picker', () => {
   });
 
   test('should allow changing date', async ({ page }) => {
-    const datePicker = page.locator('input[type="date"]');
+    const datePicker = page.locator('input[type="date"]:visible');
 
     // Change to a different date
     await datePicker.fill('2017-06-15');
@@ -251,8 +267,9 @@ test.describe('CSV Export', () => {
     const exportButton = page.getByRole('button', { name: /export/i });
     await expect(exportButton).toBeVisible();
 
-    // Button should contain Download icon (svg element)
-    const icon = exportButton.locator('svg');
+    // Button should contain an icon (svg element). The button renders a
+    // download icon plus a dropdown chevron, so assert on the first svg.
+    const icon = exportButton.locator('svg').first();
     await expect(icon).toBeVisible();
   });
 
@@ -260,8 +277,9 @@ test.describe('CSV Export', () => {
     // Set up download listener before clicking
     const downloadPromise = page.waitForEvent('download');
 
-    // Click export button
+    // Open the export dropdown, then choose the CSV format
     await page.getByRole('button', { name: /export/i }).click();
+    await page.getByRole('menuitem', { name: 'CSV' }).click();
 
     // Wait for download
     const download = await downloadPromise;
@@ -286,7 +304,7 @@ test.describe('Store Search', () => {
     // With mock data, search may not appear - check for it gracefully
 
     // First verify we're at the hierarchy section
-    await expect(page.getByRole('heading', { name: /Revenue by Hierarchy/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Unit Sales by Hierarchy/i })).toBeVisible();
 
     // Search input may or may not be visible depending on mock vs real data
     // If visible, it should have the placeholder "Search stores..."
@@ -318,7 +336,7 @@ test.describe('Store Search', () => {
       await expect(page.getByText('Store 1').first()).toBeVisible();
     } else {
       // With mock data, verify stores are still shown without search
-      await expect(page.getByText(/Store 1/i)).toBeVisible();
+      await expect(page.getByText(/Store 1/i).first()).toBeVisible();
     }
   });
 
@@ -385,10 +403,11 @@ test.describe('MLRF Explainability Page', () => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
-    // Should show summary cards
-    await expect(page.getByText('Base Value')).toBeVisible();
-    await expect(page.getByText('Final Prediction')).toBeVisible();
-    await expect(page.getByText('Total Impact')).toBeVisible();
+    // Should show summary cards. The same phrases appear inside the waterfall
+    // chart labels and interpretation guide, so match the card labels exactly.
+    await expect(page.getByText('Base Value', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Final Prediction', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Total Impact', { exact: true }).first()).toBeVisible();
   });
 
   test('displays SHAP waterfall chart section', async ({ page }) => {
