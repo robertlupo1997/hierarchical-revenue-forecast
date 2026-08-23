@@ -11,13 +11,16 @@ func TestFeatureNames(t *testing.T) {
 		t.Errorf("expected %d features, got %d", NumFeatures, len(names))
 	}
 
-	// Check for expected feature names
+	// Check for expected feature names. Must match the Python contract in
+	// mlrf-ml/src/mlrf_ml/models/lightgbm_model.py (FEATURE_COLS + CATEGORICAL_COLS),
+	// where the categorical columns are named "family" and "type".
 	expectedFeatures := []string{
 		"year",
 		"month",
 		"sales_lag_7",
 		"oil_price",
-		"family_encoded",
+		"family",
+		"type",
 	}
 
 	for _, expected := range expectedFeatures {
