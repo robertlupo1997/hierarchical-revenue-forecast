@@ -255,7 +255,6 @@ mlrf/
 |-- docker-compose.yml
 |-- docker-compose.monitoring.yml
 |-- LIMITATIONS.md        # What this project does not do
-|-- DECISIONS-PENDING.md  # Claims removed that the owner may instead fix in code
 |
 |-- mlrf-data/            # Data processing (Python/Polars)
 |   |-- src/mlrf_data/
