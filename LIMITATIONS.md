@@ -4,9 +4,7 @@ This file records what MLRF does **not** do, what is unverified, and what it wou
 it. It exists because the repository's documentation previously claimed capabilities and numbers the
 code does not support. Everything below is stated from the code as it currently stands.
 
-If you are evaluating this repository, read this file first. Where a limitation could be removed
-either by deleting a claim or by changing the code, the code option is written up in
-[DECISIONS-PENDING.md](DECISIONS-PENDING.md).
+If you are evaluating this repository, read this file first.
 
 ---
 

@@ -170,7 +170,7 @@ func (h *Handlers) ModelMetrics(w http.ResponseWriter, r *http.Request) {
 	// trains AutoARIMA, ETS or SeasonalNaive, and never applies MinTrace, so the
 	// non-LightGBM rows describe models that were never run.
 	// Do not present this endpoint's output as measured model performance.
-	// See LIMITATIONS.md and DECISIONS-PENDING.md.
+	// See LIMITATIONS.md.
 	metrics := []ModelMetric{
 		{Model: "LightGBM + MinTrace", RMSLE: 0.4770, MAPE: 0.15, RMSE: 214.58},
 		{Model: "AutoARIMA + BottomUp", RMSLE: 0.5200, MAPE: 0.19, RMSE: 245.00},

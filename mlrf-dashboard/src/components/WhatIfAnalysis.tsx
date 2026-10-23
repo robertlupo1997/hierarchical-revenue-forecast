@@ -156,7 +156,7 @@ export function WhatIfAnalysis({
             Known defect: the server maps these control names to the wrong feature
             positions, so a slider does not change the feature it is labelled with.
             Several controls are not model features at all. Treat these results as
-            meaningless until the index map is corrected. See DECISIONS-PENDING.md.
+            meaningless until the index map is corrected. See LIMITATIONS.md.
           </p>
         </div>
         <button

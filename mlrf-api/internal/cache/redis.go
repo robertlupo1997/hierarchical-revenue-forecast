@@ -5,8 +5,7 @@
 // MaxLocal is a target rather than a strict bound.
 //
 // The local map is also not guarded by a mutex while being read and mutated on
-// concurrent request paths, which is a data race. See LIMITATIONS.md and
-// DECISIONS-PENDING.md.
+// concurrent request paths, which is a data race. See LIMITATIONS.md.
 package cache
 
 import (
